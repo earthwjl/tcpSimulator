@@ -18,8 +18,8 @@ public:
 private:
 	bool bindProcess(PortID port, Process* process);
 private:
-	Reader m_reader;
-	Writer m_writer;
-	std::map<PortID, Process*> portMap;
+	Reader _reader;
+	Writer _writer;
+	std::map<PortID, Process*> _portMap;
 };
 

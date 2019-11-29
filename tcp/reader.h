@@ -8,6 +8,6 @@ public:
 private:
 	bool decodeSegment(segment& seg);
 private:
-	char buffer[4096];
+	char _buffer[4096];
 };
 
