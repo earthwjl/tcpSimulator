@@ -1,18 +1,25 @@
 #pragma once
-#include "pipe.h"
+#include "Process.h"
+#include "reader.h"
+#include "writer.h"
+#include <iostream>
+#include <map>
 
-class device
+typedef unsigned short PortID;
+
+class Device
 {
+	friend class Process;
 public:
-	device();
-	~device();
-	bool bind(device* other);
-	void read(char* buf,size_t& len);
-	void write(char* buf, size_t len);
-	bool release();
+	Device();
+	~Device();
+	Process* createProcess();
+	void releaseProcess(Process* process);
 private:
-	device* communicator;
-	bool isbinded;
-	pipe* thePipe;
+	bool bindProcess(PortID port, Process* process);
+private:
+	Reader m_reader;
+	Writer m_writer;
+	std::map<PortID, Process*> portMap;
 };
 

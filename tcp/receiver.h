@@ -1,7 +1,10 @@
 #pragma once
-class receiver
+#include "device.h"
+
+class Receiver
 {
 public:
-	
+	Receiver();
+	segment receive()
 };
 

@@ -1,8 +1,13 @@
 #pragma once
-class reader
+#include "sender.h"
+#include "segment.h"
+
+class Reader
 {
 public:
-	reader();
-	~reader();
+private:
+	bool decodeSegment(segment& seg);
+private:
+	char buffer[4096];
 };
 
