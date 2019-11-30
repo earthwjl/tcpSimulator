@@ -14,7 +14,7 @@ private:
 	Pipe();
 	~Pipe();
 private:
-	Device* client;
-	Device* server;
+	Device* _client;
+	Device* _server;
 };
 
