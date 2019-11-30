@@ -5,12 +5,16 @@ struct segment
 	unsigned short dstPort;
 	unsigned int id;
 	unsigned int ackid;
-	struct {
-		bool digits[4];
-	} offset;
-	struct {
-		bool digits[6];
-	}	reserved;
+	//struct {
+	//	bool digits[4];
+	//} offset;
+
+	//这里将offset设为一个字节
+	char offset;
+	//struct {
+	//	bool digits[6];
+	//}	reserved;
+	char reserved;
 	bool urg;
 	bool ack;
 	bool psh;
@@ -18,7 +22,9 @@ struct segment
 	bool syn;
 	bool fin;
 	unsigned short wndSize;
-	unsigned short sum;
+	unsigned short checkSum;
 	unsigned short urgPtr;
+	char buffer[32];
 };
-
+void calcCheckSum(segment& seg);
+bool isValidSegment(const segment& seg);

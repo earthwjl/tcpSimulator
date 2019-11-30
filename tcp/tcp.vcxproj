@@ -120,24 +120,16 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="Process.h" />
-    <ClInclude Include="reader.h" />
-    <ClInclude Include="receiver.h" />
     <ClInclude Include="segment.h" />
-    <ClInclude Include="sender.h" />
     <ClInclude Include="device.h" />
-    <ClInclude Include="writer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="Process.cpp" />
-    <ClCompile Include="reader.cpp" />
-    <ClCompile Include="receiver.cpp" />
     <ClCompile Include="segment.cpp" />
-    <ClCompile Include="sender.cpp" />
     <ClCompile Include="device.cpp" />
-    <ClCompile Include="writer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

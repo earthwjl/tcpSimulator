@@ -1,12 +1,20 @@
 #pragma once
 #include "segment.h"
-class pipe
+#include "device.h"
+
+class Pipe
 {
-	friend class tcp;
 public:
-	pipe(device* d1,device* d2);
-	~pipe();
-	void read(segment& seg);
-	void send(const segment& seg);
+	static Pipe* getInstance();
+	static void freePipe(Pipe* pipe);
+	void bind(Device* a, Device* b);
+	void sendSegment(const segment& segment);
+	void registerSegmentHandler(void(handler)(const segment& seg));
+private:
+	Pipe();
+	~Pipe();
+private:
+	Device* client;
+	Device* server;
 };
 

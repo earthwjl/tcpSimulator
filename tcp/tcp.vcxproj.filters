@@ -15,16 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sender.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="segment.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="reader.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pipe.h">
@@ -36,24 +27,12 @@
     <ClInclude Include="Process.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="writer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Buffer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sender.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="segment.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="reader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pipe.cpp">
@@ -63,9 +42,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Process.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="writer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Buffer.cpp">
