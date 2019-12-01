@@ -6,6 +6,7 @@ class Process
 public:
 	Process(Device* device,std::istream& in,std::ostream& out);
 	bool bindPort(PortID port);
+	PortID getBindingPort()const;
 	bool connect(Device* device, PortID port);
 	void run();
 	~Process();

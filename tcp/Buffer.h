@@ -6,6 +6,7 @@ class Buffer
 {
 public:
 	size_t length()const;
+	void reset(size_t length);
 protected:
 	Buffer(size_t length);
 	virtual ~Buffer();

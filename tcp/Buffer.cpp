@@ -25,6 +25,17 @@ inline size_t Buffer::length()const
 {
 	return _length;
 }
+void Buffer::reset(size_t len)
+{
+	if (_length != len)
+	{
+		delete[] _buffer;
+		_buffer = new char[len];
+		_length = len;
+	}
+	_wndLeft = _wndRight = 0;
+	_cacheRight = _wndRight;
+}
 inline char* Buffer::getWindowLeft()const
 {
 	return _buffer + _wndLeft;

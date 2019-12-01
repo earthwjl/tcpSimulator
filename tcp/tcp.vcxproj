@@ -119,17 +119,21 @@
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="pipe.h" />
+    <ClInclude Include="Port.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="segment.h" />
     <ClInclude Include="device.h" />
+    <ClInclude Include="SegmentController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="Port.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="segment.cpp" />
     <ClCompile Include="device.cpp" />
+    <ClCompile Include="SegmentController.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,25 +1,23 @@
 #pragma once
-#include "Process.h"
-#include "reader.h"
-#include "writer.h"
-#include <iostream>
+#include "Port.h"
 #include <map>
+#include <set>
+#include "segment.h"
 
-typedef unsigned short PortID;
-
+class Process;
 class Device
 {
-	friend class Process;
 public:
 	Device();
 	~Device();
+	bool processBindPort(Process* process, PortID id);
+	void processReleasePort(Process* process);
 	Process* createProcess();
-	void releaseProcess(Process* process);
+	void deleteProcess(Process* process);
+	void sendSegment(Device* other, const segment& seg);
+	void getSegment(const segment& seg);
 private:
-	bool bindProcess(PortID port, Process* process);
-private:
-	Reader _reader;
-	Writer _writer;
-	std::map<PortID, Process*> _portMap;
+	std::map<PortID, Process*> _portProcessMap;
+	std::map<PortID, Port*>	_portMap;
+	std::set<Process*> _processSet;
 };
-

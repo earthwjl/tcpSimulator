@@ -30,6 +30,12 @@
     <ClInclude Include="Buffer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Port.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SegmentController.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="segment.cpp">
@@ -48,6 +54,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Port.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SegmentController.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
