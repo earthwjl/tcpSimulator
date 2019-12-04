@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include "pipe.h"
+#include "Port.h"
 
 Device::Device()
 {}
@@ -17,7 +18,7 @@ Device::~Device()
 		delete p;
 	}
 }
-bool Device::processBindPort(Process * process, PortID id)
+bool Device::processBindPort(Process * process,  short id)
 {
 	if (!process)
 		return false;
@@ -27,10 +28,10 @@ bool Device::processBindPort(Process * process, PortID id)
 	if (!_portProcessMap.count(id) || _portProcessMap[id] == NULL)
 	{
 		_portProcessMap[id] = process;
-		if (_portMap.count(id))
-			_portMap[id]->reset();
-		else
-			_portMap[id] = new Port(this,id);
+		//if (_portMap.count(id))
+		//	_portMap[id]->reset();
+		//else
+		_portMap[id] = new Port(this,id);
 		return true;
 	}
 	else
@@ -60,16 +61,19 @@ void Device::deleteProcess(Process* process)
 		_processSet.erase(process);
 }
 
-void Device::sendSegment(Device* other, const segment& segment)
+Port * Device::getPort( short id)
+{
+	if (_portMap.count(id))
+		return _portMap[id];
+	else
+		return NULL;
+}
+
+void Device::sendSegment(const segment& segment)
 {
 	Pipe* thePipe = Pipe::getInstance();
 	Device* a = NULL,*b = NULL;
 	thePipe->getDevice(a, b);
-	if (!((a == this && b == other) || (a == other && b == this)))
-	{
-		thePipe->releaseBind();
-		thePipe->bind(this, other);
-	}
 	thePipe->sendSegment(this, segment);
 }
 
@@ -77,7 +81,7 @@ void Device::getSegment(const segment & seg)
 {
 	if (!isValidSegment(seg))
 		return;
-	PortID targetPort = seg.dstPort;
+	unsigned short targetPort = seg.dstPort;
 	if (_portMap.count(targetPort))
-		_portMap[targetPort]->acceptSegment(seg);
+		_portMap[targetPort]->receiveSegment(seg);
 }

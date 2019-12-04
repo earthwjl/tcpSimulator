@@ -1,6 +1,8 @@
 #pragma once
 #include <thread>
 #include <mutex>
+#include "segment.h"
+class Port;
 
 class Buffer
 {
@@ -13,10 +15,12 @@ protected:
 	char* readWindow(size_t len);
 	char* getWindowLeft()const;
 	char* getWindowRight()const;
+	char* getBuffer()const;
 	char* getCacheEnd()const;
 	void writeBuffer(char* buf,size_t len);
 	size_t getCurrentWindowSize()const;
 	size_t getSpareSize()const;
+	//将部分buffer标为已读
 	void deleteBuffer(size_t len);
 private:
 	char* _buffer;
@@ -28,16 +32,36 @@ private:
 
 class WriteBuffer :public Buffer
 {
+	friend class Port;
 public:
-	WriteBuffer();
+	WriteBuffer(Port* port);
+	std::mutex _stopMutex;
+
+	char* _tmpBuffer;
+
 	~WriteBuffer();
-	void write(char* buf, size_t len);
+	void write(const char* buf, size_t len);
 private:
 	static void _writeHandler(WriteBuffer* buffer);
 	static void _sendHandler(WriteBuffer* buffer);
+	void receiveAck(size_t id);
+	void sendSegment(const segment& seg);
 	std::thread _sendThread;
 	std::thread _writeThread;
 	std::mutex _writeMutex;
-	char* _tmpBuffer;
 	size_t _tmpLength;
+	Port* _port;
+	bool terminateThread;
+};
+class ReadBuffer :public Buffer
+{
+	friend class Port;
+public:
+	ReadBuffer(Port* port);
+	bool read(char* &  buf, size_t& len);
+private:
+	void readSegment(const segment& seg);
+private:
+	Port* _port;
+
 };

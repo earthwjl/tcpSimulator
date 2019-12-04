@@ -24,3 +24,17 @@ bool isValidSegment(const segment & seg)
 	}
 	return result == (unsigned short)(-1);
 }
+bool isAckSegment(const segment& seg)
+{
+	if (seg.offset == sizeof(segment))
+		return true;
+	else
+		return false;
+}
+bool getAckSegmentNumber(const segment& seg, size_t & number)
+{
+	if (!isAckSegment(seg))
+		return false;
+	number = seg.ackid;
+	return true;
+}

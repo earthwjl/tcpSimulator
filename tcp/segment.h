@@ -1,10 +1,10 @@
 #pragma once
 struct segment
 {
-	unsigned short srcPort;
-	unsigned short dstPort;
+	 short srcPort;
+	 short dstPort;
 	unsigned int id;
-	unsigned int ackid;
+	size_t ackid;
 	//struct {
 	//	bool digits[4];
 	//} offset;
@@ -28,3 +28,5 @@ struct segment
 };
 void calcCheckSum(segment& seg);
 bool isValidSegment(const segment& seg);
+bool isAckSegment(const segment& seg);
+bool getAckSegmentNumber(const segment& seg,size_t & number);

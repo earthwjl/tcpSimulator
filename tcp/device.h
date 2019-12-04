@@ -5,19 +5,21 @@
 #include "segment.h"
 
 class Process;
+class Pipe;
 class Device
 {
 public:
 	Device();
 	~Device();
-	bool processBindPort(Process* process, PortID id);
+	bool processBindPort(Process* process, short id);
 	void processReleasePort(Process* process);
 	Process* createProcess();
 	void deleteProcess(Process* process);
-	void sendSegment(Device* other, const segment& seg);
+	Port* getPort( short id);
+	void sendSegment(const segment& seg);
 	void getSegment(const segment& seg);
 private:
-	std::map<PortID, Process*> _portProcessMap;
-	std::map<PortID, Port*>	_portMap;
+	std::map< short, Process*> _portProcessMap;
+	std::map< short, Port*>	_portMap;
 	std::set<Process*> _processSet;
 };

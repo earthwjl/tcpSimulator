@@ -3,6 +3,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include "Port.h"
 
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
@@ -43,6 +44,10 @@ inline char* Buffer::getWindowLeft()const
 inline char* Buffer::getWindowRight()const
 {
 	return _buffer + _wndRight;
+}
+inline char * Buffer::getBuffer() const
+{
+	return _buffer;
 }
 inline char* Buffer::getCacheEnd()const
 {
@@ -126,19 +131,30 @@ char* Buffer::readWindow(size_t len)
 }
 
 
-WriteBuffer::WriteBuffer() :
+WriteBuffer::WriteBuffer(Port* port) :
 	Buffer(4096),_sendThread(std::thread(_sendHandler,this)),_writeThread(std::thread(_writeHandler,this)),
-	_tmpLength(0),_tmpBuffer(nullptr)
+	_tmpLength(0),_tmpBuffer(NULL),_port(port),terminateThread(false)
 {
-	_writeThread.join();
-	_sendThread.join();
+
 }
+bool stop = false;
 WriteBuffer::~WriteBuffer()
 {
+	_stopMutex.lock();
+	stop = true;
+	_stopMutex.unlock();
+
+
 	if (_tmpBuffer)
+	{
+		_writeMutex.lock();
 		delete[] _tmpBuffer;
+		_tmpBuffer = NULL;
+		_writeMutex.unlock();
+	}
+	//terminateThread = true;
 }
-void WriteBuffer::write(char* buf, size_t len)
+void WriteBuffer::write(const char* buf, size_t len)
 {
 	_writeMutex.lock();
 	_tmpBuffer = new char[len];
@@ -150,6 +166,12 @@ void WriteBuffer::_writeHandler(WriteBuffer* buffer)
 {
 	while (1)
 	{
+		buffer->_stopMutex.lock();
+		if (stop)
+		{
+			break;
+		}
+		buffer->_stopMutex.unlock();
 		if (buffer->_tmpBuffer)
 		{
 			buffer->_writeMutex.lock();
@@ -159,4 +181,61 @@ void WriteBuffer::_writeHandler(WriteBuffer* buffer)
 			buffer->_writeMutex.unlock();
 		}
 	}
+}
+
+void WriteBuffer::receiveAck(size_t id)
+{
+	char* _bufferStart = getBuffer();
+	char* _wndLeft = getWindowLeft();
+	size_t dist = _wndLeft - _bufferStart;
+	if (id > dist)
+		deleteBuffer(id - dist);
+	else
+	{
+		deleteBuffer(length() - dist);
+		deleteBuffer(id);
+	}
+}
+void WriteBuffer::sendSegment(const segment & seg)
+{
+	clock_t startTime = clock();
+	_port->sendSegment(seg);
+}
+void WriteBuffer::_sendHandler(WriteBuffer* buffer)
+{
+	if (!buffer)
+		return;
+	while (1)
+	{
+		buffer->_stopMutex.lock();
+		if (stop)
+		{
+			break;
+		}
+		buffer->_stopMutex.unlock();
+		size_t wndSize = buffer->getCurrentWindowSize();
+		if (wndSize > 32)
+		{
+			clock_t curTime = clock();
+			char* buf = buffer->readWindow(32);
+			segment theSeg;
+			memcpy(theSeg.buffer, buf, 32);
+			delete[] buf;
+			buffer->sendSegment(theSeg);
+		}
+	}
+}
+
+ReadBuffer::ReadBuffer(Port* port) :Buffer(4096),_port(port)
+{
+
+}
+
+bool ReadBuffer::read(char *& buf, size_t & len)
+{
+	return false;
+}
+
+void ReadBuffer::readSegment(const segment & seg)
+{
 }

@@ -1,12 +1,50 @@
 #include "Process.h"
+#include "pipe.h"
+#include <string>
 
-bool Process::bindPort(PortID port)
+Process::Process(Device * device, std::istream & in, std::ostream & out) :
+	_instream(in), _outstream(out), _device(device),_bindPort(0),_binded(false)
 {
-	if (_device->bindProcess(port, this))
-	{
-		_bindPort = port;
-		return true;
-	}
-	else
+}
+
+bool Process::bindPort( short port)
+{
+	if (port == 0)
 		return false;
+	_bindPort = port;
+	_device->processBindPort(this, port);
+	return true;
+}
+
+ short Process::getBindingPort() const
+{
+	return _bindPort;
+}
+
+bool Process::connect(Device * device,  short port)
+{
+	Pipe* thePipe = Pipe::getInstance();
+	thePipe->bind(_device, device);
+	_binded = true;
+	return true;
+}
+
+void Process::run()
+{
+	const char* buf = "12345678123456781234567812345678";
+	if (_binded)
+	{
+		Port* _port = _device->getPort(_bindPort);
+		if (_port)
+		{
+			_port->writeBuffer(buf, 33);
+		}
+	}
+}
+
+Process::~Process()
+{
+	Pipe* thePipe = Pipe::getInstance();
+	thePipe->releaseBind();
+	_binded = false;
 }

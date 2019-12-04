@@ -41,7 +41,7 @@ void SegmentController::push(const segment & seg)
 
 	_theQueue.push_back(controlData);
 }
-inline bool SegmentController::isEmpty()const
+bool SegmentController::isEmpty()const
 {
 	return _theQueue.empty();
 }

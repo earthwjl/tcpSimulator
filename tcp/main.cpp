@@ -11,7 +11,6 @@ int main()
 	if (processA->connect(&B, 5056))
 	{
 		processA->run();
-		processB->run();
 	}
 	return 0;
 }
