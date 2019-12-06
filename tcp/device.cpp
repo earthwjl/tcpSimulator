@@ -79,6 +79,9 @@ void Device::sendSegment(const segment& segment)
 
 void Device::getSegment(const segment & seg)
 {
+	//对报文进行校验
+	if (!isValidSegment(seg))
+		return;
 	unsigned short targetPort = seg.dstPort;
 	if (_portMap.count(targetPort))
 		_portMap[targetPort]->receiveSegment(seg);

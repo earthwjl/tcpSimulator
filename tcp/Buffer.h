@@ -21,7 +21,7 @@ protected:
 	size_t getCurrentWindowSize()const;
 	size_t getSpareSize()const;
 	//将部分buffer标为已读
-	void deleteBuffer(size_t len);
+	void deleteBuffer(size_t & len);
 private:
 	char* _buffer;
 	size_t _wndLeft;
@@ -45,7 +45,7 @@ private:
 	void _writeHandler();
 	void _sendHandler();
 	void receiveAck(size_t id);
-	void sendSegment(const segment& seg);
+	void sendSegment(segment& seg);
 	std::mutex _writeMutex;
 	size_t _tmpLength;
 	Port* _port;

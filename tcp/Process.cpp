@@ -23,9 +23,16 @@ bool Process::bindPort(short port)
 
 bool Process::connect(Device * device, short port)
 {
+	if (_bindPort == 0)
+		return false;
 	Pipe* thePipe = Pipe::getInstance();
 	thePipe->bind(_device, device);
 	_targetPort = port;
+
+	Port* _port = _device->getPort(_bindPort);
+	if (_port)
+		_port->setTargetPort(_targetPort);
+
 	return true;
 }
 
@@ -46,5 +53,4 @@ Process::~Process()
 {
 	Pipe* thePipe = Pipe::getInstance();
 	thePipe->releaseBind();
-	_binded = false;
 }

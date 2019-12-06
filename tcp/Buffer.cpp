@@ -60,11 +60,45 @@ size_t Buffer::getSpareSize()const
 	else
 		return _length - (_cacheRight - _wndLeft);
 }
-void Buffer::deleteBuffer(size_t len)
+void Buffer::deleteBuffer(size_t & len)
 {
+	size_t oldLeft = _wndLeft;
 	if (_cacheRight < _wndLeft)
 	{
+		if (_wndRight + len >= _length)
+		{
+			if (_wndRight + len - _length < _cacheRight)
+				_wndRight = _wndRight + len - _length;
+			else
+				_wndRight = _cacheRight;
 
+			if (_wndLeft + len >= _length)
+				_wndLeft = min(_wndLeft + len - _length, _wndRight);
+			else
+				_wndLeft += len;
+		}
+		else
+		{
+			if (_wndRight > _wndLeft)
+			{
+				if (_wndRight + len < _length)
+					_wndRight += len;
+				else
+					_wndRight = min(_cacheRight, _wndRight + len - _length);
+				if (_wndLeft + len > _length)
+					_wndLeft = min(_wndRight, _wndLeft + len - _length);
+				else
+					_wndLeft += len;
+			}
+			else
+			{
+				_wndRight = min(_cacheRight, _wndRight + len);
+				if (_wndLeft + len > _length)
+					_wndLeft = min(_wndLeft + len - _length, _wndRight);
+				else
+					_wndLeft += len;
+			}
+		}
 	}
 	else
 	{
@@ -77,6 +111,10 @@ void Buffer::deleteBuffer(size_t len)
 		else
 			_wndLeft += len;
 	}
+	if (oldLeft < _wndLeft)
+		len = _wndLeft - oldLeft;
+	else
+		len = _wndLeft + (_length - _wndLeft);
 }
 void Buffer::writeBuffer(char * buf, size_t len)
 {
@@ -119,7 +157,10 @@ void Buffer::writeBuffer(char * buf, size_t len)
 }
 inline size_t Buffer::getCurrentWindowSize()const
 {
-	return _wndRight - _wndLeft;
+	if (_wndRight > _wndLeft)
+		return _wndRight - _wndLeft;
+	else
+		return _wndRight + (_length - _wndLeft);
 }
 char* Buffer::readWindow(size_t& len)
 {
@@ -183,17 +224,21 @@ void WriteBuffer::receiveAck(size_t id)
 	char* _bufferStart = getBuffer();
 	char* _wndLeft = getWindowLeft();
 	size_t dist = _wndLeft - _bufferStart;
+	size_t len = 0;
 	if (id > dist)
-		deleteBuffer(id - dist);
+	{
+		len = id - dist;
+		deleteBuffer(len);
+	}
 	else
 	{
-		deleteBuffer(length() - dist);
+		len = length() - dist;
+		deleteBuffer(len);
 		deleteBuffer(id);
 	}
 }
-void WriteBuffer::sendSegment(const segment & seg)
+void WriteBuffer::sendSegment(segment & seg)
 {
-	clock_t startTime = clock();
 	_port->sendSegment(seg);
 }
 void WriteBuffer::_sendHandler()
@@ -206,7 +251,7 @@ void WriteBuffer::_sendHandler()
 		size_t wndSize = getCurrentWindowSize();
 		if (wndSize > 0)
 		{
-			clock_t curTime = clock();
+			//将数据填入buffer
 			size_t maxLen = 32;
 			char* buf = readWindow(maxLen);
 			segment theSeg;
