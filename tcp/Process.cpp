@@ -3,11 +3,11 @@
 #include <string>
 
 Process::Process(Device * device, std::istream & in, std::ostream & out) :
-	_instream(in), _outstream(out), _device(device),_bindPort(0),_binded(false)
+	_instream(in), _outstream(out), _device(device),_bindPort(0),_targetPort(0)
 {
 }
 
-bool Process::bindPort( short port)
+bool Process::bindPort(short port)
 {
 	if (port == 0)
 		return false;
@@ -21,18 +21,18 @@ bool Process::bindPort( short port)
 	return _bindPort;
 }
 
-bool Process::connect(Device * device,  short port)
+bool Process::connect(Device * device, short port)
 {
 	Pipe* thePipe = Pipe::getInstance();
 	thePipe->bind(_device, device);
-	_binded = true;
+	_targetPort = port;
 	return true;
 }
 
 void Process::run()
 {
 	const char* buf = "12345678123456781234567812345678";
-	if (_binded)
+	if (_targetPort != 0)
 	{
 		Port* _port = _device->getPort(_bindPort);
 		if (_port)

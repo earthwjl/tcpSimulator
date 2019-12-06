@@ -12,7 +12,7 @@ public:
 protected:
 	Buffer(size_t length);
 	virtual ~Buffer();
-	char* readWindow(size_t len);
+	char* readWindow(size_t& len);
 	char* getWindowLeft()const;
 	char* getWindowRight()const;
 	char* getBuffer()const;
@@ -42,16 +42,16 @@ public:
 	~WriteBuffer();
 	void write(const char* buf, size_t len);
 private:
-	static void _writeHandler(WriteBuffer* buffer);
-	static void _sendHandler(WriteBuffer* buffer);
+	void _writeHandler();
+	void _sendHandler();
 	void receiveAck(size_t id);
 	void sendSegment(const segment& seg);
-	std::thread _sendThread;
-	std::thread _writeThread;
 	std::mutex _writeMutex;
 	size_t _tmpLength;
 	Port* _port;
 	bool terminateThread;
+	std::thread* _sendThread;
+	std::thread* _writeThread;
 };
 class ReadBuffer :public Buffer
 {

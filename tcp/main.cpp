@@ -12,5 +12,6 @@ int main()
 	{
 		processA->run();
 	}
+	system("pause");
 	return 0;
 }

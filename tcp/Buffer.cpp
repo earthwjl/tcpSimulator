@@ -62,20 +62,21 @@ size_t Buffer::getSpareSize()const
 }
 void Buffer::deleteBuffer(size_t len)
 {
-	//默认情况下，避免窗口越来越小
-	if (_wndRight + len >= _length)
+	if (_cacheRight < _wndLeft)
 	{
-		if (_cacheRight < _wndLeft)
-			_wndRight = _length;
-		else
-		{
-			size_t supposedEnd = _wndRight + len;
-			_wndRight = min(supposedEnd, _cacheRight);
-		}
+
 	}
-	_wndLeft = min(_wndRight, _wndLeft + len);
-	if (_wndLeft == _length)
-		_wndLeft = _wndRight = 0;
+	else
+	{
+		if (_wndRight + len >= _cacheRight)
+			_wndRight = _cacheRight;
+		else
+			_wndRight += len;
+		if (_wndLeft + len >= _wndRight)
+			_wndLeft = _wndRight;
+		else
+			_wndLeft += len;
+	}
 }
 void Buffer::writeBuffer(char * buf, size_t len)
 {
@@ -120,39 +121,38 @@ inline size_t Buffer::getCurrentWindowSize()const
 {
 	return _wndRight - _wndLeft;
 }
-char* Buffer::readWindow(size_t len)
+char* Buffer::readWindow(size_t& len)
 {
 	size_t currentWndLen = getCurrentWindowSize();
+	if (currentWndLen == 0)
+		return NULL;
 	if (len > currentWndLen)
 		len = currentWndLen;
 	char* ret = new char[len];
 	memcpy(ret, getWindowLeft(), len);
+	deleteBuffer(len);
 	return ret;
 }
 
+bool stopThread = false;
 
 WriteBuffer::WriteBuffer(Port* port) :
-	Buffer(4096),_sendThread(std::thread(_sendHandler,this)),_writeThread(std::thread(_writeHandler,this)),
+	Buffer(4096),_sendThread(new std::thread(&WriteBuffer::_sendHandler,this)),_writeThread(new std::thread(&WriteBuffer::_writeHandler,this)),
 	_tmpLength(0),_tmpBuffer(NULL),_port(port),terminateThread(false)
 {
 
 }
-bool stop = false;
 WriteBuffer::~WriteBuffer()
 {
-	_stopMutex.lock();
-	stop = true;
-	_stopMutex.unlock();
-
-
+	stopThread = true;
+	_sendThread->join();
+	_writeThread->join();
+	delete _writeThread;
+	delete _sendThread;
+	std::lock_guard<std::mutex> guard(_writeMutex);
 	if (_tmpBuffer)
-	{
-		_writeMutex.lock();
 		delete[] _tmpBuffer;
-		_tmpBuffer = NULL;
-		_writeMutex.unlock();
-	}
-	//terminateThread = true;
+	_tmpBuffer = NULL;
 }
 void WriteBuffer::write(const char* buf, size_t len)
 {
@@ -162,23 +162,18 @@ void WriteBuffer::write(const char* buf, size_t len)
 	_tmpLength = len;
 	_writeMutex.unlock();
 }
-void WriteBuffer::_writeHandler(WriteBuffer* buffer)
+void WriteBuffer::_writeHandler()
 {
 	while (1)
 	{
-		buffer->_stopMutex.lock();
-		if (stop)
-		{
+		if (stopThread)
 			break;
-		}
-		buffer->_stopMutex.unlock();
-		if (buffer->_tmpBuffer)
+		if (_tmpBuffer)
 		{
-			buffer->_writeMutex.lock();
-			buffer->writeBuffer(buffer->_tmpBuffer, buffer->_tmpLength);
-			delete[] buffer->_tmpBuffer;
-			buffer->_tmpBuffer = NULL;
-			buffer->_writeMutex.unlock();
+			std::lock_guard<std::mutex> guard(_writeMutex);
+			writeBuffer(_tmpBuffer, _tmpLength);
+			delete[] _tmpBuffer;
+			_tmpBuffer = NULL;
 		}
 	}
 }
@@ -201,27 +196,24 @@ void WriteBuffer::sendSegment(const segment & seg)
 	clock_t startTime = clock();
 	_port->sendSegment(seg);
 }
-void WriteBuffer::_sendHandler(WriteBuffer* buffer)
+void WriteBuffer::_sendHandler()
 {
-	if (!buffer)
-		return;
 	while (1)
 	{
-		buffer->_stopMutex.lock();
-		if (stop)
-		{
+		if (stopThread)
 			break;
-		}
-		buffer->_stopMutex.unlock();
-		size_t wndSize = buffer->getCurrentWindowSize();
-		if (wndSize > 32)
+
+		size_t wndSize = getCurrentWindowSize();
+		if (wndSize > 0)
 		{
 			clock_t curTime = clock();
-			char* buf = buffer->readWindow(32);
+			size_t maxLen = 32;
+			char* buf = readWindow(maxLen);
 			segment theSeg;
-			memcpy(theSeg.buffer, buf, 32);
+			memset(&theSeg, 0, sizeof(segment));
+			memcpy(theSeg.buffer, buf, maxLen);
 			delete[] buf;
-			buffer->sendSegment(theSeg);
+			sendSegment(theSeg);
 		}
 	}
 }

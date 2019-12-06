@@ -14,9 +14,9 @@ private:
 
 private:
 	Device* _device;
-	 short _bindPort;
+	short _bindPort;
 	std::istream& _instream;
 	std::ostream& _outstream;
-	bool _binded;
+	short _targetPort;
 };
 
