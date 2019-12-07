@@ -1,7 +1,6 @@
 #include "pipe.h"
 #include <thread>
 
-bool stopThread2 = false;
 
 Pipe * Pipe::getInstance()
 {
@@ -16,16 +15,16 @@ void Pipe::bind(Device * a, Device * b)
 	_fromServerToClient.reset();
 	_client = a;
 	_server = b;
-	stopThread2 = false;
+	_stopThread = false;
 
 	_pFromClientToServerThread = new std::thread(popSegmentHandler, &_fromClientToServer, _server);
 	_pFromServerToClientThread = new std::thread(popSegmentHandler, &_fromServerToClient, _client);
 }
 void Pipe::releaseBind()
 {
-	if (stopThread2)
+	if (_stopThread)
 		return;
-	stopThread2 = true;
+	_stopThread = true;
 	_pFromClientToServerThread->join();
 	_pFromServerToClientThread->join();
 
@@ -36,7 +35,12 @@ void Pipe::releaseBind()
 Pipe::Pipe():
 	_client(NULL),_server(NULL)
 {
+	if (_stopThread == false)
+	{
+		releaseBind();
+	}
 }
+bool Pipe::_stopThread = true;
 Pipe::~Pipe()
 {
 }
@@ -44,8 +48,10 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 {
 	while (1)
 	{
-		if (stopThread2)
+		if (_stopThread)
 			break;
+		//±ÜÃâCPUÌ«¸ß
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		if (!controller->isEmpty())
 		{
 			segment seg;

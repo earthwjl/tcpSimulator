@@ -8,7 +8,6 @@ class Buffer
 {
 public:
 	size_t length()const;
-	void reset(size_t length);
 protected:
 	Buffer(size_t length);
 	virtual ~Buffer();
@@ -35,10 +34,6 @@ class WriteBuffer :public Buffer
 	friend class Port;
 public:
 	WriteBuffer(Port* port);
-	std::mutex _stopMutex;
-
-	char* _tmpBuffer;
-
 	~WriteBuffer();
 	void write(const char* buf, size_t len);
 private:
@@ -46,12 +41,13 @@ private:
 	void _sendHandler();
 	void receiveAck(size_t id);
 	void sendSegment(segment& seg);
-	std::mutex _writeMutex;
+private:
+	char* _tmpBuffer;
 	size_t _tmpLength;
+	bool _stopThread;
+	std::mutex _writeMutex;
 	Port* _port;
-	bool terminateThread;
-	std::thread* _sendThread;
-	std::thread* _writeThread;
+	std::thread _writeThread;
 };
 class ReadBuffer :public Buffer
 {

@@ -38,13 +38,13 @@ bool Process::connect(Device * device, short port)
 
 void Process::run()
 {
-	const char* buf = "12345678123456781234567812345678";
+	const char* buf = "1234567812345678123456781234567812345678";
 	if (_targetPort != 0)
 	{
 		Port* _port = _device->getPort(_bindPort);
 		if (_port)
 		{
-			_port->writeBuffer(buf, 33);
+			_port->writeBuffer(buf, strlen(buf) + 1);
 		}
 	}
 }

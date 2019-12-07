@@ -31,7 +31,8 @@ bool Device::processBindPort(Process * process,  short id)
 		//if (_portMap.count(id))
 		//	_portMap[id]->reset();
 		//else
-		_portMap[id] = new Port(this,id);
+		if(!_portMap.count(id))
+			_portMap[id] = new Port(this,id);
 		return true;
 	}
 	else

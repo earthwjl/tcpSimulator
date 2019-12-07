@@ -15,11 +15,12 @@ public:
 private:
 	Pipe();
 	~Pipe();
+	static void popSegmentHandler(SegmentController* controller, Device* target);
 private:
+	static bool _stopThread;
 	Device* _client;
 	Device* _server;
 	std::mutex _pipeMutex;
-	static void popSegmentHandler(SegmentController* controller, Device* target);
 	SegmentController _fromServerToClient;
 	SegmentController _fromClientToServer;
 	std::thread* _pFromServerToClientThread;
