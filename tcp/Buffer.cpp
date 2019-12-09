@@ -115,7 +115,7 @@ void Buffer::writeBuffer(char * buf, size_t len)
 		_cacheRight += copyLen;
 		if (len == 0 && getCurrentWindowSize() == 0)
 		{
-			_wndRight = _wndLeft + min(len, rightSpareSize / 2);
+			_wndRight = _wndLeft + min(oldLen, rightSpareSize / 2);
 			return;
 		}
 	}
@@ -153,7 +153,7 @@ inline size_t Buffer::getCurrentWindowSize()const
 {
 	if (!_buffer)
 		return 0;
-	if (_wndRight > _wndLeft)
+	if (_wndRight >= _wndLeft)
 		return _wndRight - _wndLeft;
 	else
 		return _length - _wndLeft + _wndRight;
