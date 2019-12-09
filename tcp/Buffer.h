@@ -4,16 +4,18 @@
 #include "segment.h"
 class Port;
 
-class Buffer
+class WriteBaseBuffer
 {
 public:
 	size_t length()const;
 protected:
-	Buffer(size_t length);
-	virtual ~Buffer();
+	WriteBaseBuffer(size_t length);
+	virtual ~WriteBaseBuffer();
 	char* readWindow(size_t& len);
 	char* getWindowLeft()const;
+	size_t getWndLeftId()const;
 	char* getWindowRight()const;
+	size_t getWindowRightId()const;
 	char* getBuffer()const;
 	char* getCacheEnd()const;
 	void writeBuffer(char* buf,size_t len);
@@ -29,11 +31,11 @@ private:
 	size_t _length;
 };
 
-class WriteBuffer :public Buffer
+class WriteBuffer :public WriteBaseBuffer
 {
 	friend class Port;
 public:
-	WriteBuffer(Port* port);
+	WriteBuffer(Port* port,size_t bufferLen = 4096);
 	~WriteBuffer();
 	void write(const char* buf, size_t len);
 private:
@@ -49,15 +51,27 @@ private:
 	Port* _port;
 	std::thread _writeThread;
 };
-class ReadBuffer :public Buffer
+class ReadBaseBuffer
 {
-	friend class Port;
 public:
-	ReadBuffer(Port* port);
-	bool read(char* &  buf, size_t& len);
-private:
-	void readSegment(const segment& seg);
-private:
-	Port* _port;
+	size_t getCacheLeft()const { return _cacheLeft; }
+	size_t getWndLeft()const { return _wndLeft; }
+	size_t getWndRight()const { return _wndRight; }
+	size_t getCacheSize()const;
+protected:
+	ReadBaseBuffer(size_t len);
+	~ReadBaseBuffer();
+	void writeBuffer(char* buf, size_t len, size_t pos);
+	void readBuffer(char* & buf, size_t & len);
+	void deleteLength(size_t& len);
+	size_t getSpareSize()const;
+	char* _buffer;
+	size_t _length;
+	size_t _cacheLeft;
+	size_t _wndLeft;
+	size_t _wndRight;
+};
+class ReadBuffer :public ReadBaseBuffer
+{
 
 };

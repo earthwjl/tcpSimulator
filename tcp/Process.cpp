@@ -7,7 +7,7 @@ Process::Process(Device * device, std::istream & in, std::ostream & out) :
 {
 }
 
-bool Process::bindPort(short port)
+bool Process::bindPort(unsigned short port)
 {
 	if (port == 0)
 		return false;
@@ -21,7 +21,7 @@ bool Process::bindPort(short port)
 	return _bindPort;
 }
 
-bool Process::connect(Device * device, short port)
+bool Process::connect(Device * device,unsigned short port)
 {
 	if (_bindPort == 0)
 		return false;

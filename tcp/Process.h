@@ -5,18 +5,18 @@ class Process
 {
 public:
 	Process(Device* device,std::istream& in,std::ostream& out);
-	bool bindPort( short port);
+	bool bindPort(unsigned short port);
 	 short getBindingPort()const;
-	bool connect(Device* device,  short port);
+	bool connect(Device* device, unsigned short port);
 	void run();
 	~Process();
 private:
 
 private:
 	Device* _device;
-	short _bindPort;
+	unsigned short _bindPort;
 	std::istream& _instream;
 	std::ostream& _outstream;
-	short _targetPort;
+	unsigned short _targetPort;
 };
 

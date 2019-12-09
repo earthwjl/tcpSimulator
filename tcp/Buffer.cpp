@@ -9,8 +9,8 @@
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
-Buffer::Buffer(size_t len):
-	_wndLeft(0),_wndRight(0),_cacheRight(0),_length(0)
+WriteBaseBuffer::WriteBaseBuffer(size_t len) :
+	_wndLeft(0), _wndRight(0), _cacheRight(0), _length(0)
 {
 	try {
 		if (len < 5 || len == (size_t)(-1))
@@ -26,34 +26,42 @@ Buffer::Buffer(size_t len):
 	}
 }
 
-Buffer::~Buffer()
+WriteBaseBuffer::~WriteBaseBuffer()
 {
 	if (_buffer)
 		delete[] _buffer;
 }
 
-inline size_t Buffer::length()const
+inline size_t WriteBaseBuffer::length()const
 {
 	return _length;
 }
 
-inline char* Buffer::getWindowLeft()const
+inline char* WriteBaseBuffer::getWindowLeft()const
 {
 	return _buffer + _wndLeft;
 }
-inline char* Buffer::getWindowRight()const
+size_t WriteBaseBuffer::getWndLeftId() const
+{
+	return _wndLeft;
+}
+inline char* WriteBaseBuffer::getWindowRight()const
 {
 	return _buffer + _wndRight;
 }
-inline char * Buffer::getBuffer() const
+size_t WriteBaseBuffer::getWindowRightId() const
+{
+	return _wndRight;
+}
+inline char * WriteBaseBuffer::getBuffer() const
 {
 	return _buffer;
 }
-inline char* Buffer::getCacheEnd()const
+inline char* WriteBaseBuffer::getCacheEnd()const
 {
 	return _buffer + _cacheRight;
 }
-size_t Buffer::getSpareSize()const
+size_t WriteBaseBuffer::getSpareSize()const
 {
 	if (_wndLeft == _cacheRight)
 	{
@@ -67,7 +75,7 @@ size_t Buffer::getSpareSize()const
 	else
 		return _wndLeft - _cacheRight;
 }
-void Buffer::deleteBuffer(size_t & len)
+void WriteBaseBuffer::deleteBuffer(size_t & len)
 {
 	if (_wndRight <= _cacheRight)
 		_wndRight = min(_wndRight + len, _cacheRight);
@@ -98,7 +106,7 @@ void Buffer::deleteBuffer(size_t & len)
 		}
 	}
 }
-void Buffer::writeBuffer(char * buf, size_t len)
+void WriteBaseBuffer::writeBuffer(char * buf, size_t len)
 {
 	if (!_buffer || len == 0)
 		return;
@@ -108,14 +116,14 @@ void Buffer::writeBuffer(char * buf, size_t len)
 	size_t leftSpareSize = _wndLeft;
 	if (rightSpareSize > 0)
 	{
-		size_t copyLen = min(len, rightSpareSize);
+		size_t copyLen = min(oldLen, rightSpareSize);
 		memcpy(getCacheEnd(), buf, copyLen);
 		buf += copyLen;
 		len -= copyLen;
 		_cacheRight += copyLen;
 		if (len == 0 && getCurrentWindowSize() == 0)
 		{
-			_wndRight = _wndLeft + min(oldLen, rightSpareSize / 2);
+			_wndRight = _wndLeft + min(len, rightSpareSize / 2);
 			return;
 		}
 	}
@@ -149,7 +157,7 @@ void Buffer::writeBuffer(char * buf, size_t len)
 	}
 	writeBuffer(buf, len);
 }
-inline size_t Buffer::getCurrentWindowSize()const
+inline size_t WriteBaseBuffer::getCurrentWindowSize()const
 {
 	if (!_buffer)
 		return 0;
@@ -158,7 +166,7 @@ inline size_t Buffer::getCurrentWindowSize()const
 	else
 		return _length - _wndLeft + _wndRight;
 }
-char* Buffer::readWindow(size_t& len)
+char* WriteBaseBuffer::readWindow(size_t& len)
 {
 	size_t currentWndLen = getCurrentWindowSize();
 	if (currentWndLen == 0)
@@ -168,19 +176,18 @@ char* Buffer::readWindow(size_t& len)
 		len = currentWndLen;
 	char* ret = new char[len];
 	memcpy(ret, getWindowLeft(), len);
-	deleteBuffer(len);
 	return ret;
 }
 
-WriteBuffer::WriteBuffer(Port* port) :
-	Buffer(88), _writeThread(std::thread(&WriteBuffer::_writeHandler, this)),
+WriteBuffer::WriteBuffer(Port* port, size_t bufferLen) :
+	WriteBaseBuffer(bufferLen), _writeThread(std::thread(&WriteBuffer::_writeHandler, this)),
 	_tmpLength(0), _tmpBuffer(NULL), _port(port), _stopThread(false)
 {
 
 }
 WriteBuffer::~WriteBuffer()
 {
- 	_stopThread = true;
+	_stopThread = true;
 	_writeThread.join();
 
 	std::lock_guard<std::mutex> guard(_writeMutex);
@@ -221,20 +228,11 @@ void WriteBuffer::_writeHandler()
 
 void WriteBuffer::receiveAck(size_t id)
 {
-	char* _bufferStart = getBuffer();
-	char* _wndLeft = getWindowLeft();
-	size_t dist = _wndLeft - _bufferStart;
-	size_t len = 0;
-	if (id > dist)
+	size_t wndLeft = getWndLeftId();
+	if (id >= wndLeft)
 	{
-		len = id - dist;
+		size_t len = id - wndLeft;
 		deleteBuffer(len);
-	}
-	else
-	{
-		len = length() - dist;
-		deleteBuffer(len);
-		deleteBuffer(id);
 	}
 }
 void WriteBuffer::sendSegment(segment & seg)
@@ -255,7 +253,9 @@ void WriteBuffer::_sendHandler()
 			char* buf = readWindow(maxLen);
 			segment theSeg;
 			memset(&theSeg, 0, sizeof(segment));
-			memcpy(theSeg.buffer, buf, maxLen);
+			theSeg.setBuffer(buf, maxLen);
+			theSeg.id = getWndLeftId();
+			theSeg.ackid = theSeg.id + maxLen;
 			delete[] buf;
 			sendSegment(theSeg);
 		}
@@ -263,17 +263,129 @@ void WriteBuffer::_sendHandler()
 			break;
 	}
 }
-
-ReadBuffer::ReadBuffer(Port* port) :Buffer(4096),_port(port)
+ReadBaseBuffer::ReadBaseBuffer(size_t len)
+	:_wndLeft(0), _wndRight(0), _cacheLeft(0), _length(0)
 {
-
+	_buffer = new char[len];
+	_length = len;
+	memset(_buffer, 0, len);
 }
-
-bool ReadBuffer::read(char *& buf, size_t & len)
+ReadBaseBuffer::~ReadBaseBuffer()
 {
-	return false;
+	if (_buffer)
+		delete[] _buffer;
 }
-
-void ReadBuffer::readSegment(const segment & seg)
+void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 {
+	//起始位置在已读取区,则该部分不再处理
+	if (pos >= _cacheLeft && pos < _wndLeft)
+	{
+		size_t dist = _wndLeft - pos;
+		buf += dist;
+		if (len < dist)
+			return;
+		len -= dist;
+		pos = _wndLeft;
+
+	}
+
+	bool updateWindowLeft = (pos == _wndLeft);
+	size_t bufEnds = pos;
+	size_t copyLen = 0;
+	if (_wndLeft >= _cacheLeft)
+	{
+		copyLen = min(len, _length - _wndLeft);
+		memcpy(_buffer + _wndLeft, buf, copyLen);
+		buf += copyLen;
+		len -= copyLen;
+		bufEnds += copyLen;
+		if (len > 0)
+		{
+			copyLen = min(_cacheLeft, len);
+			memcpy(_buffer, buf, copyLen);
+			bufEnds = copyLen;
+		}
+		if (bufEnds <= _wndLeft || bufEnds > _wndRight)
+			_wndRight = bufEnds;
+		if (updateWindowLeft)
+			_wndLeft = bufEnds;
+
+		if (buf > 0)
+		{
+			while (getSpareSize() == 0)
+			{
+				std::cout << "waiting process to pick up" << std::endl;
+			}
+			writeBuffer(buf, len, bufEnds);
+		}
+	}
+	else
+	{
+		copyLen = min(_cacheLeft - _wndLeft, len);
+		memcpy(_buffer + _wndLeft, buf, copyLen);
+		buf += copyLen;
+		len -= copyLen;
+		bufEnds = _wndLeft + copyLen;
+		if (bufEnds > _wndRight)
+			_wndRight = bufEnds;
+		if (updateWindowLeft)
+			_wndLeft = bufEnds;
+		if (len > 0)
+		{
+			while (getSpareSize() == 0)
+			{
+				std::cout << "waiting process to pick up" << std::endl;
+			}
+			writeBuffer(buf, len, bufEnds);
+		}
+	}
+}
+void ReadBaseBuffer::readBuffer(char *& buf, size_t & len)
+{
+	size_t cacheSize = getCacheSize();
+	if (cacheSize < len)
+		len = cacheSize;
+	char* ret = new char[len];
+	size_t oldLen = len;
+	size_t copyLen = min(_length - _cacheLeft, len);
+	memcpy(ret, _buffer + _cacheLeft, copyLen);
+	oldLen -= copyLen;
+	if (oldLen > 0)
+		memcpy(ret + copyLen, _buffer, oldLen);
+	buf = ret;
+}
+void ReadBaseBuffer::deleteLength(size_t & len)
+{
+	size_t cacheSz = getCacheSize();
+	size_t oldCacheLeft = _cacheLeft;
+
+	if (_cacheLeft <= _wndLeft)
+	{
+		_cacheLeft = min(_cacheLeft + cacheSz, min(_cacheLeft + len, _wndLeft));
+		len = _cacheLeft - oldCacheLeft;
+	}
+	else
+	{
+		if (_cacheLeft + len > _length)
+		{
+			_cacheLeft = min((len - (_length - _cacheLeft)), _wndLeft);
+			len = _length - oldCacheLeft + _cacheLeft;
+		}
+		else
+			_cacheLeft += len;
+	}
+}
+size_t ReadBaseBuffer::getSpareSize()const
+{
+	if (_wndRight >= _cacheLeft)
+		return _length - (_wndRight - _cacheLeft);
+	else
+		return _cacheLeft - _wndRight;
+}
+size_t ReadBaseBuffer::getCacheSize()const
+{
+	if (_cacheLeft <= _wndLeft)
+		return _wndLeft - _cacheLeft;
+	else
+		return _wndLeft + (_length - _cacheLeft);
 }
