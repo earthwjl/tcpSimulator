@@ -32,6 +32,9 @@ bool Process::connect(Device * device,unsigned short port)
 	Port* _port = _device->getPort(_bindPort);
 	if (_port)
 		_port->setTargetPort(_targetPort);
+	Port* _port1 = device->getPort(port);
+	if (_port1)
+		_port1->setTargetPort(_bindPort);
 
 	return true;
 }

@@ -60,7 +60,7 @@ public:
 	size_t getCacheSize()const;
 protected:
 	ReadBaseBuffer(size_t len);
-	~ReadBaseBuffer();
+	virtual ~ReadBaseBuffer();
 	void writeBuffer(char* buf, size_t len, size_t pos);
 	void readBuffer(char* & buf, size_t & len);
 	void deleteLength(size_t& len);
@@ -73,5 +73,12 @@ protected:
 };
 class ReadBuffer :public ReadBaseBuffer
 {
-
+public:
+	ReadBuffer(Port* port, size_t bufLen = 4096);
+	~ReadBuffer();
+	void readSegment(const segment& seg);
+private:
+	void sendAck(size_t ackId);
+private:
+	Port* _port;
 };

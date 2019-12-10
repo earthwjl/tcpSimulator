@@ -123,7 +123,7 @@ void WriteBaseBuffer::writeBuffer(char * buf, size_t len)
 		_cacheRight += copyLen;
 		if (len == 0 && getCurrentWindowSize() == 0)
 		{
-			_wndRight = _wndLeft + min(len, rightSpareSize / 2);
+			_wndRight = _wndLeft + min(copyLen, rightSpareSize / 2);
 			return;
 		}
 	}
@@ -216,6 +216,7 @@ void WriteBuffer::_writeHandler()
 		{
 			std::lock_guard<std::mutex> guard(_writeMutex);
 			writeBuffer(_tmpBuffer, _tmpLength);
+			size_t wnsSize = getCurrentWindowSize();
 			delete[] _tmpBuffer;
 			_tmpBuffer = NULL;
 		}
@@ -251,10 +252,12 @@ void WriteBuffer::_sendHandler()
 			//将数据填入buffer
 			size_t maxLen = 32;
 			char* buf = readWindow(maxLen);
+			//std::cout << "send " << getWndLeftId() << std::endl;
 			segment theSeg;
 			memset(&theSeg, 0, sizeof(segment));
 			theSeg.setBuffer(buf, maxLen);
 			theSeg.id = getWndLeftId();
+			theSeg.ack = true;
 			theSeg.ackid = theSeg.id + maxLen;
 			delete[] buf;
 			sendSegment(theSeg);
@@ -282,11 +285,10 @@ void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 	{
 		size_t dist = _wndLeft - pos;
 		buf += dist;
-		if (len < dist)
+		if (len <= dist)
 			return;
 		len -= dist;
 		pos = _wndLeft;
-
 	}
 
 	bool updateWindowLeft = (pos == _wndLeft);
@@ -304,13 +306,15 @@ void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 			copyLen = min(_cacheLeft, len);
 			memcpy(_buffer, buf, copyLen);
 			bufEnds = copyLen;
+			buf += copyLen;
+			len -= copyLen;
 		}
 		if (bufEnds <= _wndLeft || bufEnds > _wndRight)
 			_wndRight = bufEnds;
 		if (updateWindowLeft)
 			_wndLeft = bufEnds;
 
-		if (buf > 0)
+		if (len > 0)
 		{
 			while (getSpareSize() == 0)
 			{
@@ -388,4 +392,34 @@ size_t ReadBaseBuffer::getCacheSize()const
 		return _wndLeft - _cacheLeft;
 	else
 		return _wndLeft + (_length - _cacheLeft);
+}
+
+ReadBuffer::ReadBuffer(Port * port, size_t bufLen):ReadBaseBuffer(bufLen),_port(port)
+{
+}
+
+ReadBuffer::~ReadBuffer()
+{
+}
+
+void ReadBuffer::readSegment(const segment & seg)
+{
+	char* buf = NULL;
+	size_t bufLen = 0;
+	seg.getBuffer(buf, bufLen);
+	if (bufLen == 0)
+		return;
+	if (bufLen)
+	{
+		writeBuffer(buf, bufLen, seg.id);
+	}
+	sendAck(_wndLeft);
+}
+
+void ReadBuffer::sendAck(size_t ackId)
+{
+	segment ackSegment;
+	ackSegment.ack = true;
+	ackSegment.ackid = ackId;
+	_port->sendSegment(ackSegment);
 }
