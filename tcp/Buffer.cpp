@@ -204,7 +204,7 @@ void WriteBuffer::write(const char* buf, size_t len)
 	_writeMutex.unlock();
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	std::thread sendThread(&WriteBuffer::_sendHandler, this);
-	sendThread.detach();
+	sendThread.join();
 }
 void WriteBuffer::_writeHandler()
 {
@@ -216,6 +216,7 @@ void WriteBuffer::_writeHandler()
 		{
 			std::lock_guard<std::mutex> guard(_writeMutex);
 			writeBuffer(_tmpBuffer, _tmpLength);
+			std::cout << "writehandler " << getCacheEnd() - getBuffer() << std::endl;
 			size_t wnsSize = getCurrentWindowSize();
 			delete[] _tmpBuffer;
 			_tmpBuffer = NULL;
@@ -240,6 +241,7 @@ void WriteBuffer::sendSegment(segment & seg)
 {
 	_port->sendSegment(seg);
 }
+
 void WriteBuffer::_sendHandler()
 {
 	while (1)
@@ -252,13 +254,11 @@ void WriteBuffer::_sendHandler()
 			//将数据填入buffer
 			size_t maxLen = 32;
 			char* buf = readWindow(maxLen);
-			//std::cout << "send " << getWndLeftId() << std::endl;
 			segment theSeg;
 			memset(&theSeg, 0, sizeof(segment));
 			theSeg.setBuffer(buf, maxLen);
 			theSeg.id = getWndLeftId();
-			theSeg.ack = true;
-			theSeg.ackid = theSeg.id + maxLen;
+			theSeg.ack = false;
 			delete[] buf;
 			sendSegment(theSeg);
 		}

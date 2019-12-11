@@ -51,12 +51,15 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 		if (_stopThread)
 			break;
 		//±ÜÃâCPUÌ«¸ß
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		if (!controller->isEmpty())
 		{
+			controller->_lock.lock();
 			segment seg;
-			if(controller->pop(seg))
+			if (controller->pop(seg))
+			{
 				target->getSegment(seg);
+			}
+			controller->_lock.unlock();
 		}
 	}
 }

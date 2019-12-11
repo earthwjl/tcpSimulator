@@ -5,6 +5,7 @@ class segment
 	friend bool isValidSegment(const segment& seg);
 public:
 	segment();
+	segment(const segment& seg);
 	~segment();
 	unsigned short srcPort;//源端口
 	unsigned short dstPort;//目标端口

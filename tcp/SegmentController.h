@@ -1,6 +1,7 @@
 #pragma once
 #include "segment.h"
 #include <list>
+#include <mutex>
 class SegmentControlData;
 class SegmentController
 {
@@ -14,6 +15,8 @@ public:
 	bool isEmpty()const;
 	bool pop(segment& seg);
 	void reset();
+	std::mutex _lock;
+
 private:
 	void shuffleSegmentData(segment& seg);
 	void shuffleSegmentOrder();

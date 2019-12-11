@@ -12,7 +12,10 @@ Port::Port(Device* device, unsigned short id) :
 void Port::receiveSegment(const segment & seg)
 {
 	if (seg.ack)
+	{
 		_writeBuffer.receiveAck(seg.ackid);
+		return;
+	}
 	_readBuffer.readSegment(seg);
 }
 void Port::setTargetPort(unsigned short port)

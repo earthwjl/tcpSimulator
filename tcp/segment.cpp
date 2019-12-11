@@ -36,6 +36,34 @@ segment::segment() :
 	
 }
 
+segment::segment(const segment & seg)
+{
+	if (seg._buffer || seg._length)
+	{
+		_buffer = new char[seg._length];
+		memcpy(_buffer, seg._buffer, seg._length);
+		_length = seg._length;
+	}
+	srcPort = seg.srcPort;
+	dstPort = seg.dstPort;
+	id = seg.id;
+	ackid = seg.id;
+	offset = seg.offset;
+	reserved = seg.reserved;
+	urg = seg.urg;
+	ack = seg.ack;
+	psh = seg.psh;
+	rst = seg.rst;
+	syn = seg.syn;
+	fin = seg.fin;
+	wndSize = seg.wndSize;
+	urgPtr = seg.urgPtr;
+	if (seg.checkSum)
+	{
+		updateCheckSum();
+	}
+}
+
 segment::~segment()
 {
 	if (_buffer)

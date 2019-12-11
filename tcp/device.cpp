@@ -13,10 +13,12 @@ Device::~Device()
 	{
 		delete iter.second;
 	}
+	_portMap.clear();
 	for (Process* p : _processSet)
 	{
 		delete p;
 	}
+	_processSet.clear();
 }
 bool Device::processBindPort(Process * process,  short id)
 {
