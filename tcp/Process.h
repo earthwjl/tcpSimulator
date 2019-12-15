@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "device.h"
+#include <vector>
 class Process
 {
 public:
@@ -8,7 +9,8 @@ public:
 	bool bindPort(unsigned short port);
 	 short getBindingPort()const;
 	bool connect(Device* device, unsigned short port);
-	void run();
+	void write();
+	void read();
 	~Process();
 private:
 
@@ -18,5 +20,6 @@ private:
 	std::istream& _instream;
 	std::ostream& _outstream;
 	unsigned short _targetPort;
+	std::vector<char> _buffer;
 };
 

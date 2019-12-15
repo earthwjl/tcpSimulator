@@ -47,7 +47,7 @@ segment::segment(const segment & seg)
 	srcPort = seg.srcPort;
 	dstPort = seg.dstPort;
 	id = seg.id;
-	ackid = seg.id;
+	ackid = seg.ackid;
 	offset = seg.offset;
 	reserved = seg.reserved;
 	urg = seg.urg;

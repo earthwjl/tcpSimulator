@@ -36,3 +36,7 @@ void Port::writeBuffer(const char* buf, size_t len)
 {
 	_writeBuffer.write(buf, len);
 }
+void Port::readBuffer(char* & buf, size_t & len)
+{
+	_readBuffer.read(buf, len);
+}

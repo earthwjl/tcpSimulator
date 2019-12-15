@@ -77,8 +77,11 @@ public:
 	ReadBuffer(Port* port, size_t bufLen = 4096);
 	~ReadBuffer();
 	void readSegment(const segment& seg);
+	void read(char* & buffer, size_t & len);
 private:
 	void sendAck(size_t ackId);
+	size_t getBufferSize()const;
 private:
 	Port* _port;
+	bool _fin;
 };

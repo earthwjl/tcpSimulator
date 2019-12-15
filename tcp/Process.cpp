@@ -1,6 +1,7 @@
 #include "Process.h"
 #include "pipe.h"
 #include <string>
+#include <fstream>
 
 Process::Process(Device * device, std::istream & in, std::ostream & out) :
 	_instream(in), _outstream(out), _device(device),_bindPort(0),_targetPort(0)
@@ -39,9 +40,9 @@ bool Process::connect(Device * device,unsigned short port)
 	return true;
 }
 
-void Process::run()
+void Process::write()
 {
-	const char* buf = "1234567812345678123456781234567812345678";
+	const char* buf = "123456781234567812345678123456781234567812345678";
 	if (_targetPort != 0)
 	{
 		Port* _port = _device->getPort(_bindPort);
@@ -56,4 +57,32 @@ Process::~Process()
 {
 	Pipe* thePipe = Pipe::getInstance();
 	thePipe->releaseBind();
+}
+
+void Process::read()
+{
+	std::ofstream ofs("C:\\Users\\Andy Wang\\Desktop\\out.txt");
+	char* buffer = NULL;
+	size_t bufferLength = 0;
+
+	Port* port = _device->getPort(_bindPort);
+	if (port)
+	{
+		while (1)
+		{
+			port->readBuffer(buffer, bufferLength);
+			if (bufferLength > 0)
+			{
+				std::vector<char> tmp;
+				for (size_t i = 0; i < bufferLength; ++i)
+				{
+					tmp.push_back(buffer[i]);
+				}
+				ofs << tmp.data();
+				delete[] buffer;
+				break;
+			}
+		}
+	}
+	ofs.close();
 }

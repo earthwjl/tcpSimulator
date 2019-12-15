@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "Port.h"
 #include <exception>
+#include <Windows.h>
 
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
@@ -149,7 +150,7 @@ void WriteBaseBuffer::writeBuffer(char * buf, size_t len)
 			_wndRight = _wndLeft + right / 2;
 		else
 			_wndRight = _length - 1;
-	}
+	} 
 	clock_t startWaiting = clock();
 	while (getSpareSize() == 0)
 	{
@@ -216,7 +217,6 @@ void WriteBuffer::_writeHandler()
 		{
 			std::lock_guard<std::mutex> guard(_writeMutex);
 			writeBuffer(_tmpBuffer, _tmpLength);
-			std::cout << "writehandler " << getCacheEnd() - getBuffer() << std::endl;
 			size_t wnsSize = getCurrentWindowSize();
 			delete[] _tmpBuffer;
 			_tmpBuffer = NULL;
@@ -259,8 +259,11 @@ void WriteBuffer::_sendHandler()
 			theSeg.setBuffer(buf, maxLen);
 			theSeg.id = getWndLeftId();
 			theSeg.ack = false;
+			if (getCacheEnd() == getWindowRight())
+				theSeg.fin = true;
 			delete[] buf;
 			sendSegment(theSeg);
+			Sleep(100);
 		}
 		else
 			break;
@@ -394,7 +397,7 @@ size_t ReadBaseBuffer::getCacheSize()const
 		return _wndLeft + (_length - _cacheLeft);
 }
 
-ReadBuffer::ReadBuffer(Port * port, size_t bufLen):ReadBaseBuffer(bufLen),_port(port)
+ReadBuffer::ReadBuffer(Port * port, size_t bufLen):ReadBaseBuffer(bufLen), _port(port),_fin(false)
 {
 }
 
@@ -409,6 +412,8 @@ void ReadBuffer::readSegment(const segment & seg)
 	seg.getBuffer(buf, bufLen);
 	if (bufLen == 0)
 		return;
+	if (seg.fin)
+		_fin = true;
 	if (bufLen)
 	{
 		writeBuffer(buf, bufLen, seg.id);
@@ -422,4 +427,52 @@ void ReadBuffer::sendAck(size_t ackId)
 	ackSegment.ack = true;
 	ackSegment.ackid = ackId;
 	_port->sendSegment(ackSegment);
+}
+
+size_t ReadBuffer::getBufferSize() const
+{
+	if (_wndLeft >= _cacheLeft)
+		return _wndLeft - _cacheLeft;
+	else
+		return (_length - _cacheLeft) + _wndLeft;
+}
+
+
+void ReadBuffer::read(char* & buffer, size_t & len)
+{
+	clock_t startTime = clock();
+	char* localBuffer = NULL;
+	size_t localLen = 0;
+	while (1)
+	{
+		if (getBufferSize() > 0)
+		{
+			clock_t duration = clock() - startTime;
+			if (getBufferSize() > _length / 4 || duration > 200)
+			{
+				size_t currentLength = getBufferSize();
+				if (localLen == 0)
+				{
+					localLen = currentLength;
+					localBuffer = new char[currentLength];
+					memcpy(localBuffer, _buffer + _cacheLeft, currentLength);
+				}
+				else
+				{
+					char* dst = new char[localLen + currentLength];
+					memcpy(dst, localBuffer, localLen);
+					memcpy(dst + localLen, _buffer + _cacheLeft, currentLength);
+					delete[] localBuffer;
+					localBuffer = dst;
+					localLen += currentLength;
+				}
+				buffer = localBuffer;
+				len = localLen;
+				startTime = clock();
+				deleteLength(currentLength);
+			}
+		}
+		if (_fin)
+			break;
+	}
 }
