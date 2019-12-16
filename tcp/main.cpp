@@ -12,10 +12,9 @@ int main()
 	processB->bindPort(5056);
 	if (processA->connect(&B, 5056))
 	{
-		std::thread thread1(&Process::write, processA);
-		thread1.join();
-		std::thread thread2(&Process::read, processB);
-		thread2.join();
+		processA->write();
+		Sleep(1000);
+		processB->read();
 	}
 	return 0;
 }

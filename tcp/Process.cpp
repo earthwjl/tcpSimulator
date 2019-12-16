@@ -61,7 +61,6 @@ Process::~Process()
 
 void Process::read()
 {
-	std::ofstream ofs("C:\\Users\\Andy Wang\\Desktop\\out.txt");
 	char* buffer = NULL;
 	size_t bufferLength = 0;
 
@@ -78,11 +77,9 @@ void Process::read()
 				{
 					tmp.push_back(buffer[i]);
 				}
-				ofs << tmp.data();
 				delete[] buffer;
 				break;
 			}
 		}
 	}
-	ofs.close();
 }

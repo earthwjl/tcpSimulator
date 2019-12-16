@@ -80,7 +80,6 @@ public:
 	void read(char* & buffer, size_t & len);
 private:
 	void sendAck(size_t ackId);
-	size_t getBufferSize()const;
 private:
 	Port* _port;
 	bool _fin;

@@ -429,13 +429,6 @@ void ReadBuffer::sendAck(size_t ackId)
 	_port->sendSegment(ackSegment);
 }
 
-size_t ReadBuffer::getBufferSize() const
-{
-	if (_wndLeft >= _cacheLeft)
-		return _wndLeft - _cacheLeft;
-	else
-		return (_length - _cacheLeft) + _wndLeft;
-}
 
 
 void ReadBuffer::read(char* & buffer, size_t & len)
@@ -445,32 +438,29 @@ void ReadBuffer::read(char* & buffer, size_t & len)
 	size_t localLen = 0;
 	while (1)
 	{
-		if (getBufferSize() > 0)
+		size_t bufferSize = getCacheSize();
+		if (bufferSize > 0)
 		{
-			clock_t duration = clock() - startTime;
-			if (getBufferSize() > _length / 4 || duration > 200)
+			size_t currentLength = getCacheSize();
+			if (localLen == 0)
 			{
-				size_t currentLength = getBufferSize();
-				if (localLen == 0)
-				{
-					localLen = currentLength;
-					localBuffer = new char[currentLength];
-					memcpy(localBuffer, _buffer + _cacheLeft, currentLength);
-				}
-				else
-				{
-					char* dst = new char[localLen + currentLength];
-					memcpy(dst, localBuffer, localLen);
-					memcpy(dst + localLen, _buffer + _cacheLeft, currentLength);
-					delete[] localBuffer;
-					localBuffer = dst;
-					localLen += currentLength;
-				}
-				buffer = localBuffer;
-				len = localLen;
-				startTime = clock();
-				deleteLength(currentLength);
+				localLen = currentLength;
+				localBuffer = new char[currentLength];
+				memcpy(localBuffer, _buffer + _cacheLeft, currentLength);
 			}
+			else
+			{
+				char* dst = new char[localLen + currentLength];
+				memcpy(dst, localBuffer, localLen);
+				memcpy(dst + localLen, _buffer + _cacheLeft, currentLength);
+				delete[] localBuffer;
+				localBuffer = dst;
+				localLen += currentLength;
+			}
+			buffer = localBuffer;
+			len = localLen;
+			startTime = clock();
+			deleteLength(currentLength);
 		}
 		if (_fin)
 			break;
