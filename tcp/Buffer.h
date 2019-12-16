@@ -18,7 +18,7 @@ protected:
 	size_t getWindowRightId()const;
 	char* getBuffer()const;
 	char* getCacheEnd()const;
-	void writeBuffer(char* buf,size_t len);
+	void writeBuffer(const char* buf,size_t len);
 	size_t getCurrentWindowSize()const;
 	size_t getSpareSize()const;
 	//将部分buffer标为已读
@@ -35,7 +35,7 @@ class WriteBuffer :public WriteBaseBuffer
 {
 	friend class Port;
 public:
-	WriteBuffer(Port* port,size_t bufferLen = 4096);
+	WriteBuffer(Port* port,size_t bufferLen = 64);
 	~WriteBuffer();
 	void write(const char* buf, size_t len);
 private:
@@ -44,7 +44,7 @@ private:
 	void receiveAck(size_t id);
 	void sendSegment(segment& seg);
 private:
-	char* _tmpBuffer;
+	const char* _tmpBuffer;
 	size_t _tmpLength;
 	bool _stopThread;
 	std::mutex _writeMutex;
@@ -74,7 +74,7 @@ protected:
 class ReadBuffer :public ReadBaseBuffer
 {
 public:
-	ReadBuffer(Port* port, size_t bufLen = 4096);
+	ReadBuffer(Port* port, size_t bufLen = 64);
 	~ReadBuffer();
 	void readSegment(const segment& seg);
 	void read(char* & buffer, size_t & len);

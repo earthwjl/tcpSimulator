@@ -13,8 +13,9 @@ int main()
 	if (processA->connect(&B, 5056))
 	{
 		processA->write();
-		Sleep(1000);
-		processB->read();
+		Sleep(100);
+		std::thread readThread(&Process::read, processB);
+		readThread.join();
 	}
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include "pipe.h"
 #include <thread>
+#include <iostream>
 
 
 Pipe * Pipe::getInstance()
@@ -65,12 +66,15 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 }
 void Pipe::sendSegment(Device* sender, const segment& segment)
 {
+
 	if (sender == _client)
 	{
+		std::cout << "pipe client send segment id " << segment.id << " ackid " << segment.bufferLength()+segment.id << std::endl;
 		_fromClientToServer.push(segment);
 	}
 	else if (sender == _server)
 	{
+		std::cout << "pipe server send segment" << std::endl;
 		_fromServerToClient.push(segment);
 	}
 }

@@ -7,8 +7,8 @@
 #include <exception>
 #include <Windows.h>
 
-#define min(a,b) (((a)<(b))?(a):(b))
-#define max(a,b) (((a)>(b))?(a):(b))
+//#define min(a,b) (((a)<(b))?(a):(b))
+//#define max(a,b) (((a)>(b))?(a):(b))
 
 WriteBaseBuffer::WriteBaseBuffer(size_t len) :
 	_wndLeft(0), _wndRight(0), _cacheRight(0), _length(0)
@@ -89,7 +89,7 @@ void WriteBaseBuffer::deleteBuffer(size_t & len)
 	}
 	size_t oldLeft = _wndLeft;
 
-	if (_wndLeft <= _wndRight)
+	if (_wndLeft < _wndRight)
 	{
 		_wndLeft = min(_wndLeft + len, _wndRight);
 		len = _wndLeft - oldLeft;
@@ -106,9 +106,12 @@ void WriteBaseBuffer::deleteBuffer(size_t & len)
 			_wndLeft += len;
 		}
 	}
+	std::cout << "writebuffer delete " << len << " bytes" << std::endl;
+	std::cout << "wndleft " << getWndLeftId() << " wndRight " << getWindowRightId() << std::endl;
 }
-void WriteBaseBuffer::writeBuffer(char * buf, size_t len)
+void WriteBaseBuffer::writeBuffer(const char * buf, size_t len)
 {
+	std::cout << "writing leftsize=" << getSpareSize() << std::endl;
 	if (!_buffer || len == 0)
 		return;
 	size_t oldLen = len;
@@ -154,7 +157,7 @@ void WriteBaseBuffer::writeBuffer(char * buf, size_t len)
 	clock_t startWaiting = clock();
 	while (getSpareSize() == 0)
 	{
-		std::cout << "no spare size...have been waiting for " << clock() - startWaiting << " ticks" << std::endl;
+		//std::cout << "writing buffer no spare size...have been waiting for " << clock() - startWaiting << " ticks" << std::endl;
 	}
 	writeBuffer(buf, len);
 }
@@ -198,9 +201,9 @@ WriteBuffer::~WriteBuffer()
 }
 void WriteBuffer::write(const char* buf, size_t len)
 {
+	std::cout << "start write to writebuffer" << std::endl;
 	_writeMutex.lock();
-	_tmpBuffer = new char[len];
-	memcpy(_tmpBuffer, buf, len);
+	_tmpBuffer = buf;
 	_tmpLength = len;
 	_writeMutex.unlock();
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -218,7 +221,6 @@ void WriteBuffer::_writeHandler()
 			std::lock_guard<std::mutex> guard(_writeMutex);
 			writeBuffer(_tmpBuffer, _tmpLength);
 			size_t wnsSize = getCurrentWindowSize();
-			delete[] _tmpBuffer;
 			_tmpBuffer = NULL;
 		}
 		else
@@ -234,6 +236,11 @@ void WriteBuffer::receiveAck(size_t id)
 	if (id >= wndLeft)
 	{
 		size_t len = id - wndLeft;
+		deleteBuffer(len);
+	}
+	else
+	{
+		size_t len = id + (length() - wndLeft);
 		deleteBuffer(len);
 	}
 }
@@ -252,7 +259,7 @@ void WriteBuffer::_sendHandler()
 		if (wndSize > 0)
 		{
 			//将数据填入buffer
-			size_t maxLen = 32;
+			size_t maxLen = 55;
 			char* buf = readWindow(maxLen);
 			segment theSeg;
 			memset(&theSeg, 0, sizeof(segment));
@@ -289,7 +296,10 @@ void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 		size_t dist = _wndLeft - pos;
 		buf += dist;
 		if (len <= dist)
+		{
+			std::cout << "received before reject!" << std::endl;
 			return;
+		}
 		len -= dist;
 		pos = _wndLeft;
 	}
@@ -366,7 +376,7 @@ void ReadBaseBuffer::deleteLength(size_t & len)
 	size_t cacheSz = getCacheSize();
 	size_t oldCacheLeft = _cacheLeft;
 
-	if (_cacheLeft <= _wndLeft)
+	if (_cacheLeft < _wndLeft)
 	{
 		_cacheLeft = min(_cacheLeft + cacheSz, min(_cacheLeft + len, _wndLeft));
 		len = _cacheLeft - oldCacheLeft;
@@ -381,6 +391,7 @@ void ReadBaseBuffer::deleteLength(size_t & len)
 		else
 			_cacheLeft += len;
 	}
+	std::cout << "readbuffer delete size " << len << std::endl;
 }
 size_t ReadBaseBuffer::getSpareSize()const
 {
@@ -407,6 +418,7 @@ ReadBuffer::~ReadBuffer()
 
 void ReadBuffer::readSegment(const segment & seg)
 {
+	std::cout << "read segment id = " << seg.id << std::endl;
 	char* buf = NULL;
 	size_t bufLen = 0;
 	seg.getBuffer(buf, bufLen);
@@ -418,11 +430,12 @@ void ReadBuffer::readSegment(const segment & seg)
 	{
 		writeBuffer(buf, bufLen, seg.id);
 	}
-	sendAck(_wndLeft);
+	sendAck(seg.id + seg.bufferLength());
 }
 
 void ReadBuffer::sendAck(size_t ackId)
 {
+	std::cout << "readbuffer send ack " << ackId << std::endl;
 	segment ackSegment;
 	ackSegment.ack = true;
 	ackSegment.ackid = ackId;
@@ -433,7 +446,6 @@ void ReadBuffer::sendAck(size_t ackId)
 
 void ReadBuffer::read(char* & buffer, size_t & len)
 {
-	clock_t startTime = clock();
 	char* localBuffer = NULL;
 	size_t localLen = 0;
 	while (1)
@@ -459,7 +471,6 @@ void ReadBuffer::read(char* & buffer, size_t & len)
 			}
 			buffer = localBuffer;
 			len = localLen;
-			startTime = clock();
 			deleteLength(currentLength);
 		}
 		if (_fin)

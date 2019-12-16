@@ -77,14 +77,19 @@ void Device::sendSegment(const segment& segment)
 	Pipe* thePipe = Pipe::getInstance();
 	Device* a = NULL,*b = NULL;
 	thePipe->getDevice(a, b);
+	std::cout << "device " << this << " send segment" << std::endl;
 	thePipe->sendSegment(this, segment);
 }
 
 void Device::getSegment(const segment & seg)
 {
+	std::cout << "device " << this << " receive segment" << std::endl;
 	//对报文进行校验
 	if (!isValidSegment(seg))
+	{
+		std::cout << "invalid segment" << std::endl;
 		return;
+	}
 	unsigned short targetPort = seg.dstPort;
 	if (_portMap.count(targetPort))
 		_portMap[targetPort]->receiveSegment(seg);

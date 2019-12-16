@@ -42,13 +42,18 @@ bool Process::connect(Device * device,unsigned short port)
 
 void Process::write()
 {
-	const char* buf = "123456781234567812345678123456781234567812345678";
+	std::string str;
+	for (int i = 0; i < 10; ++i)
+	{
+		str += std::string("1234567890");
+	}
+	std::cout << "prepare to send buffer size=" << str.size() << std::endl;
 	if (_targetPort != 0)
 	{
 		Port* _port = _device->getPort(_bindPort);
 		if (_port)
 		{
-			_port->writeBuffer(buf, strlen(buf) + 1);
+			_port->writeBuffer(str.c_str(), str.size()+1);
 		}
 	}
 }
@@ -78,6 +83,8 @@ void Process::read()
 					tmp.push_back(buffer[i]);
 				}
 				delete[] buffer;
+				std::cout << "received size = " << tmp.size() << std::endl;
+				std::cout << "received:" << tmp.data() << std::endl;
 				break;
 			}
 		}
