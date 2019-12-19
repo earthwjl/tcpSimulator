@@ -90,3 +90,9 @@ void Process::read()
 		}
 	}
 }
+
+void Process::acceptBuffer(char * buf, size_t len)
+{
+	for (size_t i = 0; i < len; ++i)
+		_buffer.push_back(buf[i]);
+}

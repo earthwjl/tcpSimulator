@@ -15,7 +15,8 @@ public:
 	void processReleasePort(Process* process);
 	Process* createProcess();
 	void deleteProcess(Process* process);
-	Port* getPort( short id);
+	Port* getPort(short id);
+	Process* getBindedProcess(short portId);
 	void sendSegment(const segment& seg);
 	void getSegment(const segment& seg);
 private:

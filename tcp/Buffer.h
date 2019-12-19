@@ -58,6 +58,8 @@ public:
 	size_t getWndLeft()const { return _wndLeft; }
 	size_t getWndRight()const { return _wndRight; }
 	size_t getCacheSize()const;
+	bool isFull()const;
+	bool isEmpty()const;
 protected:
 	ReadBaseBuffer(size_t len);
 	virtual ~ReadBaseBuffer();
@@ -76,8 +78,10 @@ class ReadBuffer :public ReadBaseBuffer
 public:
 	ReadBuffer(Port* port, size_t bufLen = 64);
 	~ReadBuffer();
-	void readSegment(const segment& seg);
+	bool readSegment(const segment& seg);//如果缓存已满，则拒绝这次报文
 	void read(char* & buffer, size_t & len);
+	void checkUpload();
+	void forceUpload();
 private:
 	void sendAck(size_t ackId);
 private:

@@ -1,7 +1,7 @@
 #include "Port.h"
 #include "device.h"
 #include <iostream>
-
+#include "Process.h"
 Port::Port(Device* device, unsigned short id) :
 	_theDevice(device), _theID(id), _writeBuffer(this),_readBuffer(this),_connectPort(0)
 {
@@ -24,6 +24,13 @@ void Port::receiveSegment(const segment & seg)
 void Port::setTargetPort(unsigned short port)
 {
 	_connectPort = port;
+}
+void Port::uploadBuffer(char * buf, size_t len)
+{
+	Process* bindingProcess = _theDevice->getBindedProcess(_theID);
+	if (!bindingProcess)
+		return;
+	bindingProcess->acceptBuffer(buf, len);
 }
 void Port::sendSegment(segment& seg)
 {

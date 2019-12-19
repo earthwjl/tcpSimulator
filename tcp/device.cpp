@@ -72,6 +72,14 @@ Port * Device::getPort( short id)
 		return NULL;
 }
 
+Process * Device::getBindedProcess(short portId)
+{
+	if (_portProcessMap.count(portId))
+		return _portProcessMap[portId];
+	else
+		return nullptr;
+}
+
 void Device::sendSegment(const segment& segment)
 {
 	Pipe* thePipe = Pipe::getInstance();

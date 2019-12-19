@@ -12,6 +12,7 @@ public:
 	void sendSegment(segment& seg);
 	void setTargetPort(unsigned short port);
 	unsigned short ID()const { return _theID; }
+	void uploadBuffer(char* buf,size_t len);
 private:
 	WriteBuffer _writeBuffer;
 	ReadBuffer _readBuffer;

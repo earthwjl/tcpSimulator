@@ -6,6 +6,7 @@
 #include "Port.h"
 #include <exception>
 #include <Windows.h>
+#include "Process.h"
 
 //#define min(a,b) (((a)<(b))?(a):(b))
 //#define max(a,b) (((a)>(b))?(a):(b))
@@ -408,6 +409,16 @@ size_t ReadBaseBuffer::getCacheSize()const
 		return _wndLeft + (_length - _cacheLeft);
 }
 
+bool ReadBaseBuffer::isFull() const
+{
+	return _cacheLeft != _wndLeft && (_wndLeft == _wndRight);
+}
+
+bool ReadBaseBuffer::isEmpty() const
+{
+	return _cacheLeft == _wndLeft && _wndLeft == _wndRight;
+}
+
 ReadBuffer::ReadBuffer(Port * port, size_t bufLen):ReadBaseBuffer(bufLen), _port(port),_fin(false)
 {
 }
@@ -416,21 +427,28 @@ ReadBuffer::~ReadBuffer()
 {
 }
 
-void ReadBuffer::readSegment(const segment & seg)
+bool ReadBuffer::readSegment(const segment & seg)
 {
+	if (isFull())
+	{
+		std::cout << "read buffer is full!\n";
+		return false;
+	}
 	std::cout << "read segment id = " << seg.id << std::endl;
 	char* buf = NULL;
 	size_t bufLen = 0;
 	seg.getBuffer(buf, bufLen);
 	if (bufLen == 0)
-		return;
+		return true;
 	if (seg.fin)
 		_fin = true;
 	if (bufLen)
 	{
 		writeBuffer(buf, bufLen, seg.id);
+		checkUpload();//避免缓存满了以后无法加入其他数据，进行清理
 	}
 	sendAck(seg.id + seg.bufferLength());
+	return true;
 }
 
 void ReadBuffer::sendAck(size_t ackId)
@@ -475,5 +493,32 @@ void ReadBuffer::read(char* & buffer, size_t & len)
 		}
 		if (_fin)
 			break;
+	}
+}
+
+void ReadBuffer::checkUpload()
+{
+	if (!_fin && getSpareSize() > 0)
+		return;
+	forceUpload();
+}
+
+void ReadBuffer::forceUpload()
+{
+	if (_cacheLeft < _wndLeft)
+	{
+		_port->uploadBuffer(_buffer + _cacheLeft, _wndLeft - _cacheLeft);
+		_cacheLeft = _wndLeft;
+	}
+	else if (_cacheLeft > _wndLeft)
+	{
+		size_t part = _length - _cacheLeft;
+		size_t totalSize = part + _wndLeft;
+
+		char* tmp = new char[totalSize]();
+		memcpy(tmp, _buffer + _cacheLeft, _length - _cacheLeft);
+		memcpy(tmp + part, _buffer, _wndLeft);
+		_port->uploadBuffer(tmp, totalSize);
+		delete[] tmp;
 	}
 }

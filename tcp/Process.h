@@ -11,6 +11,7 @@ public:
 	bool connect(Device* device, unsigned short port);
 	void write();
 	void read();
+	void acceptBuffer(char* buf, size_t len);
 	~Process();
 private:
 
