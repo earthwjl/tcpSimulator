@@ -20,14 +20,26 @@ void Port::receiveSegment(const segment & seg)
 		return;
 	}
 	_readBuffer.readSegment(seg);
+	if (seg.fin)
+	{
+		Process* bindingProcess = _theDevice->getBindedProcess(_theID);
+		if (bindingProcess)
+			bindingProcess->unlock();
+	}
 }
 void Port::setTargetPort(unsigned short port)
 {
 	_connectPort = port;
 }
+bool firstSegment = false;
 void Port::uploadBuffer(char * buf, size_t len)
 {
 	Process* bindingProcess = _theDevice->getBindedProcess(_theID);
+	if (firstSegment == false)
+	{
+		bindingProcess->lock();
+		firstSegment = true;
+	}
 	if (!bindingProcess)
 		return;
 	bindingProcess->acceptBuffer(buf, len);

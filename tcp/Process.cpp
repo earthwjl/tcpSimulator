@@ -2,10 +2,12 @@
 #include "pipe.h"
 #include <string>
 #include <fstream>
+#include <Windows.h>
 
 Process::Process(Device * device, std::istream & in, std::ostream & out) :
 	_instream(in), _outstream(out), _device(device),_bindPort(0),_targetPort(0)
 {
+	lockStatus = false;
 }
 
 bool Process::bindPort(unsigned short port)
@@ -66,33 +68,29 @@ Process::~Process()
 
 void Process::read()
 {
-	char* buffer = NULL;
-	size_t bufferLength = 0;
-
-	Port* port = _device->getPort(_bindPort);
-	if (port)
-	{
-		while (1)
-		{
-			port->readBuffer(buffer, bufferLength);
-			if (bufferLength > 0)
-			{
-				std::vector<char> tmp;
-				for (size_t i = 0; i < bufferLength; ++i)
-				{
-					tmp.push_back(buffer[i]);
-				}
-				delete[] buffer;
-				std::cout << "received size = " << tmp.size() << std::endl;
-				std::cout << "received:" << tmp.data() << std::endl;
-				break;
-			}
-		}
-	}
+	unlock();
+	Sleep(1000);
+	lock();
+	std::cout <<"buffer size = " << _buffer.size() << "buffer is " <<   _buffer.data() << std::endl;
+	unlock();
 }
 
 void Process::acceptBuffer(char * buf, size_t len)
 {
 	for (size_t i = 0; i < len; ++i)
 		_buffer.push_back(buf[i]);
+}
+void Process::lock()
+{
+	if (lockStatus)
+		return;
+	_rwMutex.lock();
+	lockStatus = true;
+}
+void Process::unlock()
+{
+	if (lockStatus == false)
+		return;
+	_rwMutex.unlock();
+	lockStatus = false;
 }

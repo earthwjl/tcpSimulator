@@ -23,7 +23,6 @@ protected:
 	size_t getSpareSize()const;
 	//将部分buffer标为已读
 	void deleteBuffer(size_t & len);
-private:
 	char* _buffer;
 	size_t _wndLeft;
 	size_t _wndRight;

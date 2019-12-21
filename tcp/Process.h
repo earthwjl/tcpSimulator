@@ -12,6 +12,8 @@ public:
 	void write();
 	void read();
 	void acceptBuffer(char* buf, size_t len);
+	void lock();
+	void unlock();
 	~Process();
 private:
 
@@ -22,5 +24,7 @@ private:
 	std::ostream& _outstream;
 	unsigned short _targetPort;
 	std::vector<char> _buffer;
+	std::mutex _rwMutex;
+	bool lockStatus;
 };
 
