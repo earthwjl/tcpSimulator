@@ -68,17 +68,17 @@ Process::~Process()
 
 void Process::read()
 {
-	unlock();
-	Sleep(1000);
-	lock();
-	std::cout <<"buffer size = " << _buffer.size() << "buffer is " <<   _buffer.data() << std::endl;
-	unlock();
+	Sleep(5000);
+	if(_buffer.size())
+		std::cout <<"buffer size = " << _buffer.size() << "buffer is " <<   _buffer.data() << std::endl;
 }
 
 void Process::acceptBuffer(char * buf, size_t len)
 {
+	lock();
 	for (size_t i = 0; i < len; ++i)
 		_buffer.push_back(buf[i]);
+	unlock();
 }
 void Process::lock()
 {

@@ -76,60 +76,34 @@ void WriteBaseBuffer::writeBuffer(const char * buf, size_t len)
 {
 	if (!_buffer || len == 0)
 		return;
+	while (getSpareSize() == 0)
+	{}
 
 	size_t cacheRight = _cacheRight % _length;
 	size_t wndLeft = _wndLeft % _length;
 	size_t wndRight = _wndRight % _length;
-
-	std::cout << "writing leftsize=" << getSpareSize() << std::endl;
-	if (!_buffer || len == 0)
-		return;
-	size_t oldLen = len;
-	//初始情况下，将窗口长度设为buffer length的一半和len的最小值
-	size_t rightSpareSize = _length - cacheRight;
-	size_t leftSpareSize = wndLeft;
-	if (rightSpareSize > 0)
+	if (cacheRight >= wndLeft)
 	{
-		size_t copyLen = min(oldLen, rightSpareSize);
-		memcpy(getCacheEnd(), buf, copyLen);
-		buf += copyLen;
-		len -= copyLen;
-		_cacheRight += copyLen;
-		if (len == 0 && getCurrentWindowSize() == 0)
-		{
-			_wndRight = _wndLeft + min(copyLen, rightSpareSize / 2);
-			return;
-		}
+		size_t cpLen = min(len, _length - cacheRight);
+		memcpy(_buffer + cacheRight, buf, cpLen);
+		len -= cpLen;
+		buf += cpLen;
+		_cacheRight += cpLen;
 	}
-
-	if (leftSpareSize > 0)
+	else
 	{
-		size_t cpLen = min(len, leftSpareSize);
-		memcpy(_buffer, buf, cpLen);
+		size_t cpLen = min(len, wndLeft - cacheRight);
+		memcpy(_buffer + cacheRight, buf, cpLen);
 		buf += cpLen;
 		len -= cpLen;
 		_cacheRight += cpLen;
-
-		if (len == 0 && getCurrentWindowSize() == 0)
-		{
-			_wndRight = _wndLeft + min(leftSpareSize / 2, rightSpareSize / 2);
-			return;
-		}
 	}
-	if (getCurrentWindowSize() == 0)
+	if (_wndRight == _wndLeft && _wndRight < _cacheRight)
 	{
-		size_t right = _length - (_wndLeft % _length);
-		if (right > _length / 2)
-			_wndRight = _wndLeft + right / 2;
-		else
-			_wndRight = _wndLeft + _length - 1;
-	} 
-	clock_t startWaiting = clock();
-	while (getSpareSize() == 0)
-	{
-		//std::cout << "writing buffer no spare size...have been waiting for " << clock() - startWaiting << " ticks" << std::endl;
+		_wndRight = _wndLeft + (_cacheRight - _wndLeft) / 2;
 	}
-	writeBuffer(buf, len);
+	if (len != 0)
+		writeBuffer(buf, len);
 }
 inline size_t WriteBaseBuffer::getCurrentWindowSize()const
 {
@@ -147,14 +121,26 @@ char* WriteBaseBuffer::readWindow(size_t& len)
 		len = currentWndLen;
 	char* ret = new char[len];
 	size_t wndRight = _wndRight % _length;
-	if (wndRight + len > _length)
+	size_t wndLeft = _wndLeft % _length;
+	if (wndLeft < wndRight)
 	{
-		size_t right = (wndRight + len) - _length;
-		memcpy(ret, getWindowLeft(), right);
-		memcpy(ret + right, getBuffer(), len - right);
+		size_t right = min(len, wndRight - wndLeft);
+		memcpy(ret, _buffer + wndLeft, right);
 	}
 	else
-		memcpy(ret, getWindowLeft(), len);
+	{
+		if (len >= _length - _wndLeft)
+		{
+			size_t right = _length - _wndLeft;
+			memcpy(ret, _buffer + wndLeft, right);
+			if(len != right)
+				memcpy(ret + right, _buffer, min(wndRight, len - right));
+		}
+		else
+		{
+			memcpy(ret, _buffer + wndLeft, len);
+		}
+	}
 	return ret;
 }
 
@@ -207,11 +193,10 @@ void WriteBuffer::_writeHandler()
 
 void WriteBuffer::receiveAck(size_t id)
 {
-	size_t _wndLeft = getWndLeftId();
 	if (id > _wndLeft)
 	{
-		id -= _wndLeft;
-		deleteBuffer(id);
+		size_t len = id - _wndLeft;
+		deleteBuffer(len);
 	}
 }
 void WriteBuffer::sendSegment(segment & seg)
