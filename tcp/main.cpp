@@ -1,7 +1,7 @@
 #include "device.h"
 #include "Process.h"
 
-#include <Windows.h>
+#include <unistd.h>
 
 int main()
 {
@@ -13,7 +13,7 @@ int main()
 	if (processA->connect(&B, 5056))
 	{
 		processA->write();
-		Sleep(100);
+		sleep(1);
 		std::thread readThread(&Process::read, processB);
 		readThread.join();
 	}

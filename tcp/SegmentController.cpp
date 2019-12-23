@@ -1,5 +1,5 @@
 #include "SegmentController.h"
-#include <Windows.h>
+#include <unistd.h>
 
 class SegmentControlData
 {
@@ -46,7 +46,6 @@ bool SegmentController::isEmpty()const
 }
 bool SegmentController::pop(segment& seg)
 {
-	//弹出时对报文进行修改，乱序
 	if (_theQueue.empty())
 		return false;
 	SegmentControlData* controlData = _theQueue.front();
@@ -63,7 +62,7 @@ bool SegmentController::pop(segment& seg)
 	controlData = _theQueue.front();
 	
 	if (controlData->_setTimeInterval > 0)
-		Sleep(controlData->_setTimeInterval);
+		sleep(controlData->_setTimeInterval);
 
 	seg = controlData->_theSegment;
 	_theQueue.pop_front();

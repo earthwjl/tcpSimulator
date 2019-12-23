@@ -5,27 +5,18 @@
 #include <cstdlib>
 #include "Port.h"
 #include <exception>
-#include <Windows.h>
+#include <unistd.h>
 #include "Process.h"
 
-//#define min(a,b) (((a)<(b))?(a):(b))
-//#define max(a,b) (((a)>(b))?(a):(b))
+#define min(a,b) (((a)<(b))?(a):(b))
+#define max(a,b) (((a)>(b))?(a):(b))
 
 WriteBaseBuffer::WriteBaseBuffer(size_t len) :
 	_wndLeft(0), _wndRight(0), _cacheRight(0), _length(0)
 {
-	try {
-		if (len < 5 || len == (size_t)(-1))
-			throw std::exception("bad buffer length!");
-		_length = len;
-		_buffer = new char[len];
-		memset(_buffer, 0, len);
-	}
-	catch (std::exception& e)
-	{
-		_buffer = NULL;
-		std::cerr << e.what() << std::endl;
-	}
+	_length = len;
+	_buffer = new char[len];
+	memset(_buffer,0,len);
 }
 
 WriteBaseBuffer::~WriteBaseBuffer()
@@ -213,7 +204,6 @@ void WriteBuffer::_sendHandler()
 		size_t wndSize = getCurrentWindowSize();
 		if (wndSize > 0)
 		{
-			//将数据填入buffer
 			size_t maxLen = 55;
 			char* buf = readWindow(maxLen);
 			segment theSeg;
@@ -225,7 +215,7 @@ void WriteBuffer::_sendHandler()
 				theSeg.fin = true;
 			delete[] buf;
 			sendSegment(theSeg);
-			Sleep(100);
+			sleep(1);
 		}
 		else
 			break;
@@ -245,7 +235,6 @@ ReadBaseBuffer::~ReadBaseBuffer()
 }
 void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 {
-	//起始位置在已读取区,则该部分不再处理
 	if (pos >= _cacheLeft && pos + len <= _wndLeft)
 	{
 		size_t dist = _wndLeft - pos;
@@ -260,7 +249,7 @@ void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 	}
 	while (getSpareSize() == 0)
 	{
-		Sleep(100);
+		sleep(100);
 	}
 	size_t cacheLeft = _cacheLeft % _length;
 	size_t wndLeft = _wndLeft % _length;
@@ -373,7 +362,7 @@ bool ReadBuffer::readSegment(const segment & seg)
 	if (bufLen)
 	{
 		writeBuffer(buf, bufLen, seg.id);
-		checkUpload();//避免缓存满了以后无法加入其他数据，进行清理
+		checkUpload();
 	}
 	sendAck(seg.id + seg.bufferLength());
 	return true;

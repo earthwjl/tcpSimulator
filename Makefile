@@ -1,0 +1,2 @@
+tcpSimulator: tcp/Buffer.cpp tcp/device.cpp tcp/main.cpp tcp/pipe.cpp tcp/Port.cpp tcp/Process.cpp tcp/segment.cpp tcp/SegmentController.cpp
+	g++ -o tcpSimulator -std=c++11 -lpthread tcp/Buffer.cpp tcp/device.cpp tcp/main.cpp tcp/pipe.cpp tcp/Port.cpp tcp/Process.cpp tcp/segment.cpp tcp/SegmentController.cpp
