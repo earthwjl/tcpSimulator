@@ -6,13 +6,13 @@
 class SegmentControlData
 {
 public:
-	SegmentControlData(const segment& segment);
-	segment _theSegment;
+	SegmentControlData(segment* segment);
+	segment* _theSegment;
 	bool	_setWrongData;
 	unsigned int _setTimeInterval;
 	bool	_setWrongOrder;
 };
-SegmentControlData::SegmentControlData(const segment & segment):
+SegmentControlData::SegmentControlData(segment* segment):
 	_theSegment(segment),_setWrongData(false),_setWrongOrder(false),_setTimeInterval(0)
 {
 }
@@ -29,7 +29,7 @@ SegmentController::~SegmentController()
 {
 }
 
-void SegmentController::push(const segment & seg)
+void SegmentController::push(segment * seg)
 {
 	float wrongData = rand() / (float)RAND_MAX;
 	SegmentControlData* controlData = new SegmentControlData(seg);
@@ -46,7 +46,7 @@ bool SegmentController::isEmpty()const
 {
 	return _theQueue.empty();
 }
-bool SegmentController::pop(segment& seg)
+bool SegmentController::pop(segment* & seg)
 {
 	if (_theQueue.empty())
 		return false;
@@ -67,6 +67,7 @@ bool SegmentController::pop(segment& seg)
 		std::this_thread::sleep_for(std::chrono::milliseconds(controlData->_setTimeInterval));
 
 	seg = controlData->_theSegment;
+	delete controlData;
 	_theQueue.pop_front();
 	return true;
 }
@@ -77,10 +78,10 @@ void SegmentController::reset()
 	_theQueue.clear();
 }
 
-void SegmentController::shuffleSegmentData(segment & seg)
+void SegmentController::shuffleSegmentData(segment * seg)
 {
 	int count = rand() % 20;
-	char* start = (char*)(&seg);
+	char* start = (char*)(seg);
 	for (int i = 0; i < count; ++i)
 	{
 		int id = rand() % sizeof(segment);

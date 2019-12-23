@@ -10,7 +10,7 @@ public:
 	static Pipe* getInstance();
 	void bind(Device* a, Device* b);
 	void releaseBind();
-	void sendSegment(Device* sender,const segment& segment);
+	void sendSegment(Device* sender,segment* segment);
 	void getDevice(Device* & a, Device* & b);
 private:
 	Pipe();

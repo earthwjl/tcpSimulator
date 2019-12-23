@@ -21,7 +21,6 @@ protected:
 	void writeBuffer(const char* buf,size_t len);
 	size_t getCurrentWindowSize()const;
 	size_t getSpareSize()const;
-	//将部分buffer标为已读
 	void deleteBuffer(size_t & len);
 	char* _buffer;
 	size_t _wndLeft;
@@ -41,7 +40,7 @@ private:
 	void _writeHandler();
 	void _sendHandler();
 	void receiveAck(size_t id);
-	void sendSegment(segment& seg);
+	void sendSegment(segment* seg);
 private:
 	const char* _tmpBuffer;
 	size_t _tmpLength;
@@ -77,7 +76,7 @@ class ReadBuffer :public ReadBaseBuffer
 public:
 	ReadBuffer(Port* port, size_t bufLen = 64);
 	~ReadBuffer();
-	bool readSegment(const segment& seg);//如果缓存已满，则拒绝这次报文
+	bool readSegment(const segment* seg);
 	void read(char* & buffer, size_t & len);
 	void checkUpload();
 	void forceUpload();

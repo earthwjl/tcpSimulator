@@ -80,7 +80,7 @@ Process * Device::getBindedProcess(short portId)
 		return nullptr;
 }
 
-void Device::sendSegment(const segment& segment)
+void Device::sendSegment(segment* segment)
 {
 	Pipe* thePipe = Pipe::getInstance();
 	Device* a = NULL,*b = NULL;
@@ -89,16 +89,16 @@ void Device::sendSegment(const segment& segment)
 	thePipe->sendSegment(this, segment);
 }
 
-void Device::getSegment(const segment & seg)
+void Device::getSegment(const segment * seg)
 {
 	std::cout << "device " << this << " receive segment" << std::endl;
-	//对报文进行校验
 	if (!isValidSegment(seg))
 	{
 		std::cout << "invalid segment" << std::endl;
 		return;
 	}
-	unsigned short targetPort = seg.dstPort;
+	unsigned short targetPort = seg->dstPort;
 	if (_portMap.count(targetPort))
 		_portMap[targetPort]->receiveSegment(seg);
+	delete seg;
 }

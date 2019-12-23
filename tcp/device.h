@@ -17,8 +17,8 @@ public:
 	void deleteProcess(Process* process);
 	Port* getPort(short id);
 	Process* getBindedProcess(short portId);
-	void sendSegment(const segment& seg);
-	void getSegment(const segment& seg);
+	void sendSegment(segment* seg);
+	void getSegment(const segment* seg);
 private:
 	std::map< short, Process*> _portProcessMap;
 	std::map< short, Port*>	_portMap;

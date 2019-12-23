@@ -2,7 +2,7 @@
 #include <cstddef>
 class segment
 {
-	friend bool isValidSegment(const segment& seg);
+	friend bool isValidSegment(const segment* seg);
 public:
 	segment();
 	segment(const segment& seg);
@@ -32,4 +32,4 @@ private:
 	char* _buffer;
 	size_t _length;
 };
-bool isValidSegment(const segment& seg);
+bool isValidSegment(const segment* seg);

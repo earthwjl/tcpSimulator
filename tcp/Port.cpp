@@ -10,17 +10,17 @@ Port::Port(Device* device, unsigned short id) :
 
 
 
-void Port::receiveSegment(const segment & seg)
+void Port::receiveSegment(const segment * seg)
 {
 	std::cout << "port " << _theID << " receive a segment" << std::endl;
-	if (seg.ack)
+	if (seg->ack)
 	{
-		std::cout << "port " << _theID << " receive an ack segment with id " << seg.ackid << std::endl;
-		_writeBuffer.receiveAck(seg.ackid);
+		std::cout << "port " << _theID << " receive an ack segment with id " << seg->ackid << std::endl;
+		_writeBuffer.receiveAck(seg->ackid);
 		return;
 	}
 	_readBuffer.readSegment(seg);
-	if (seg.fin)
+	if (seg->fin)
 	{
 		Process* bindingProcess = _theDevice->getBindedProcess(_theID);
 		if (bindingProcess)
@@ -44,14 +44,13 @@ void Port::uploadBuffer(char * buf, size_t len)
 		return;
 	bindingProcess->acceptBuffer(buf, len);
 }
-void Port::sendSegment(segment& seg)
+void Port::sendSegment(segment* seg)
 {
 	if (_connectPort == 0)
 		return;
-	//将数据打包成一个segment;
-	seg.srcPort = _theID;
-	seg.dstPort = _connectPort;
-	seg.updateCheckSum();
+	seg->srcPort = _theID;
+	seg->dstPort = _connectPort;
+	seg->updateCheckSum();
 	std::cout << "port " << _theID << " send segment" << std::endl;
 	_theDevice->sendSegment(seg);
 }

@@ -54,7 +54,7 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 		if (!controller->isEmpty())
 		{
 			controller->_lock.lock();
-			segment seg;
+			segment* seg = NULL;
 			if (controller->pop(seg))
 			{
 				target->getSegment(seg);
@@ -63,12 +63,12 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 		}
 	}
 }
-void Pipe::sendSegment(Device* sender, const segment& segment)
+void Pipe::sendSegment(Device* sender, segment* segment)
 {
 
 	if (sender == _client)
 	{
-		std::cout << "pipe client send segment id " << segment.id << " ackid " << segment.bufferLength()+segment.id << std::endl;
+		std::cout << "pipe client send segment id " << segment->id << " ackid " << segment->bufferLength()+segment->id << std::endl;
 		_fromClientToServer.push(segment);
 	}
 	else if (sender == _server)

@@ -1,11 +1,11 @@
 #include "segment.h"
 #include <cstring>
 
-bool isValidSegment(const segment & seg)
+bool isValidSegment(const segment * seg)
 {
 	unsigned int len = sizeof(segment) / sizeof(unsigned short);
 	unsigned short result = 0;
-	unsigned short* head = (unsigned short*)(&seg);
+	unsigned short* head = (unsigned short*)(seg);
 	for (unsigned int i = 0; i < len; ++i)
 	{
 		result += head[i];

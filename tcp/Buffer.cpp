@@ -74,9 +74,7 @@ void WriteBaseBuffer::writeBuffer(const char * buf, size_t len)
 	size_t cacheRight = _cacheRight % _length;
 	size_t wndLeft = _wndLeft % _length;
 	size_t wndRight = _wndRight % _length;
-	std::cout << "_cacheRight " << _cacheRight << std::endl;
-	std::cout << "_wndLeft " << _wndLeft <<std::endl;
-	std::cout <<"_wndRight " << _wndRight << std::endl;
+
 	if (cacheRight >= wndLeft)
 	{
 		size_t cpLen = min(len, _length - cacheRight);
@@ -190,12 +188,11 @@ void WriteBuffer::receiveAck(size_t id)
 {
 	if (id > _wndLeft)
 	{
-		std::cout << "id = "<<id << std::endl;
 		size_t len = id - _wndLeft;
 		deleteBuffer(len);
 	}
 }
-void WriteBuffer::sendSegment(segment & seg)
+void WriteBuffer::sendSegment(segment * seg)
 {
 	_port->sendSegment(seg);
 }
@@ -211,13 +208,12 @@ void WriteBuffer::_sendHandler()
 		{
 			size_t maxLen = 55;
 			char* buf = readWindow(maxLen);
-			segment theSeg;
-			memset(&theSeg, 0, sizeof(segment));
-			theSeg.setBuffer(buf, maxLen);
-			theSeg.id = getWndLeftId();
-			theSeg.ack = false;
+			segment* theSeg = new segment();
+			theSeg->setBuffer(buf, maxLen);
+			theSeg->id = getWndLeftId();
+			theSeg->ack = false;
 			if (_cacheRight == _wndRight)
-				theSeg.fin = true;
+				theSeg->fin = true;
 			delete[] buf;
 			sendSegment(theSeg);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -348,7 +344,7 @@ ReadBuffer::ReadBuffer(Port * port, size_t bufLen):ReadBaseBuffer(bufLen), _port
 ReadBuffer::~ReadBuffer()
 {
 }
-bool ReadBuffer::readSegment(const segment & seg)
+bool ReadBuffer::readSegment(const segment * seg)
 {
 	if (isFull())
 	{
@@ -356,29 +352,29 @@ bool ReadBuffer::readSegment(const segment & seg)
 		checkUpload();
 		return false;
 	}
-	std::cout << "read segment id = " << seg.id << std::endl;
+	std::cout << "read segment id = " << seg->id << std::endl;
 	char* buf = NULL;
 	size_t bufLen = 0;
-	seg.getBuffer(buf, bufLen);
+	seg->getBuffer(buf, bufLen);
 	if (bufLen == 0)
 		return true;
-	if (seg.fin)
+	if (seg->fin)
 		_fin = true;
 	if (bufLen)
 	{
-		writeBuffer(buf, bufLen, seg.id);
+		writeBuffer(buf, bufLen, seg->id);
 		checkUpload();
 	}
-	sendAck(seg.id + seg.bufferLength());
+	sendAck(seg->id + seg->bufferLength());
 	return true;
 }
 
 void ReadBuffer::sendAck(size_t ackId)
 {
 	std::cout << "readbuffer send ack " << ackId << std::endl;
-	segment ackSegment;
-	ackSegment.ack = true;
-	ackSegment.ackid = ackId;
+	segment* ackSegment = new segment();
+	ackSegment->ack = true;
+	ackSegment->ackid = ackId;
 	_port->sendSegment(ackSegment);
 }
 
