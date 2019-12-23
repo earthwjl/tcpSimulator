@@ -51,7 +51,6 @@ void Pipe::popSegmentHandler(SegmentController * controller, Device* target)
 	{
 		if (_stopThread)
 			break;
-		//±ÜÃâCPUÌ«¸ß
 		if (!controller->isEmpty())
 		{
 			controller->_lock.lock();

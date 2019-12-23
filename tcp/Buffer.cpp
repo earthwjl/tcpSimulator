@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include "Port.h"
 #include <exception>
-#include <unistd.h>
 #include "Process.h"
 
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -68,11 +67,16 @@ void WriteBaseBuffer::writeBuffer(const char * buf, size_t len)
 	if (!_buffer || len == 0)
 		return;
 	while (getSpareSize() == 0)
-	{}
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+	}
 
 	size_t cacheRight = _cacheRight % _length;
 	size_t wndLeft = _wndLeft % _length;
 	size_t wndRight = _wndRight % _length;
+	std::cout << "_cacheRight " << _cacheRight << std::endl;
+	std::cout << "_wndLeft " << _wndLeft <<std::endl;
+	std::cout <<"_wndRight " << _wndRight << std::endl;
 	if (cacheRight >= wndLeft)
 	{
 		size_t cpLen = min(len, _length - cacheRight);
@@ -186,6 +190,7 @@ void WriteBuffer::receiveAck(size_t id)
 {
 	if (id > _wndLeft)
 	{
+		std::cout << "id = "<<id << std::endl;
 		size_t len = id - _wndLeft;
 		deleteBuffer(len);
 	}
@@ -215,7 +220,7 @@ void WriteBuffer::_sendHandler()
 				theSeg.fin = true;
 			delete[] buf;
 			sendSegment(theSeg);
-			sleep(1);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		else
 			break;
@@ -249,7 +254,7 @@ void ReadBaseBuffer::writeBuffer(char* buf, size_t len, size_t pos)
 	}
 	while (getSpareSize() == 0)
 	{
-		sleep(100);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
 	size_t cacheLeft = _cacheLeft % _length;
 	size_t wndLeft = _wndLeft % _length;

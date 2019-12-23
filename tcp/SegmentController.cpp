@@ -1,5 +1,7 @@
 #include "SegmentController.h"
-#include <unistd.h>
+#include <iostream>
+#include <thread>
+
 
 class SegmentControlData
 {
@@ -60,9 +62,9 @@ bool SegmentController::pop(segment& seg)
 		controlData->_setWrongOrder = false;
 	}
 	controlData = _theQueue.front();
-	
+
 	if (controlData->_setTimeInterval > 0)
-		sleep(controlData->_setTimeInterval);
+		std::this_thread::sleep_for(std::chrono::milliseconds(controlData->_setTimeInterval));
 
 	seg = controlData->_theSegment;
 	_theQueue.pop_front();

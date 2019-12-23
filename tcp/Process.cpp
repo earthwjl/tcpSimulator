@@ -2,7 +2,6 @@
 #include "pipe.h"
 #include <string>
 #include <fstream>
-#include <unistd.h>
 
 Process::Process(Device * device, std::istream & in, std::ostream & out) :
 	_instream(in), _outstream(out), _device(device),_bindPort(0),_targetPort(0)
@@ -68,7 +67,7 @@ Process::~Process()
 
 void Process::read()
 {
-	sleep(1);
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 	if(_buffer.size())
 		std::cout <<"buffer size = " << _buffer.size() << "buffer is " <<   _buffer.data() << std::endl;
 }

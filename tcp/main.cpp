@@ -1,8 +1,6 @@
 #include "device.h"
 #include "Process.h"
 
-#include <unistd.h>
-
 int main()
 {
 	Device A, B;
@@ -13,7 +11,7 @@ int main()
 	if (processA->connect(&B, 5056))
 	{
 		processA->write();
-		sleep(1);
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 		std::thread readThread(&Process::read, processB);
 		readThread.join();
 	}
